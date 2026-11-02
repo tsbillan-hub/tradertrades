@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Briefcase, ExternalLink, Film, Handshake, LayoutDashboard, Megaphone, MessageSquareReply, PencilLine, Search, Ticket, Users } from "lucide-react";
+import { Briefcase, ChartColumn, ExternalLink, Film, Handshake, LayoutDashboard, Megaphone, MessageSquareReply, PencilLine, Search, Ticket, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { companiesFor, requireBusiness } from "@/server/dal";
 import { SideLink } from "@/components/layout/nav-link";
@@ -39,6 +39,9 @@ export default async function BusinessLayout({ children, params }: { children: R
         <nav className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:sticky lg:top-24 lg:mx-0 lg:flex-col lg:self-start lg:px-0" aria-label="Business dashboard">
           <SideLink href={base} exact icon={<LayoutDashboard />}>
             Overview
+          </SideLink>
+          <SideLink href={`${base}/stats`} icon={<ChartColumn />}>
+            Stats
           </SideLink>
           <SideLink href={`${base}/listing`} icon={<PencilLine />}>
             Listing

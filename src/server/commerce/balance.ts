@@ -15,8 +15,3 @@ export async function balances(userId: string) {
     paidOutCents: paid._sum.amountCents ?? 0,
   };
 }
-
-export async function availableBalance(userId: string) {
-  const entries = await db.ledgerEntry.findMany({ where: { userId, payoutId: null, availableAt: { lte: new Date() } }, select: { id: true, amountCents: true } });
-  return { available: entries.reduce((n, e) => n + e.amountCents, 0), entryIds: entries.map((e) => e.id) };
-}

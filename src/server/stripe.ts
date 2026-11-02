@@ -23,8 +23,8 @@ export async function payoutOnboardingLink(user: { id: string; email: string; cr
       email: user.email,
       capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
       business_profile: { product_description: "Trading education sold on TraderTrades" },
-      // Sales wait 14 days before payout for new sellers (7 after their first 60 days), to cover refunds.
-      settings: { payouts: { schedule: { interval: "daily", delay_days: NEW_SELLER_HOLD_DAYS } } },
+      // Paid out every Monday. Sales wait 14 days first for new sellers (7 after their first 60 days), to cover refunds.
+      settings: { payouts: { schedule: payoutSchedule(NEW_SELLER_HOLD_DAYS) } },
       metadata: { userId: user.id },
     });
     accountId = account.id;
@@ -53,9 +53,19 @@ export async function syncAccount(accountId: string) {
   return a;
 }
 
+/** Weekly payouts on Mondays after the hold. When our team pauses a creator's payouts, Stripe waits for us instead. */
+export function payoutSchedule(holdDays: number, paused = false): Stripe.AccountCreateParams.Settings.Payouts.Schedule {
+  return paused ? { interval: "manual" } : { interval: "weekly", weekly_anchor: "monday", delay_days: holdDays };
+}
+
 /** After a seller's first 60 days, payouts come a week sooner. */
 export async function shortenPayoutHold(accountId: string) {
-  await stripe().accounts.update(accountId, { settings: { payouts: { schedule: { interval: "daily", delay_days: HOLD_DAYS } } } });
+  await stripe().accounts.update(accountId, { settings: { payouts: { schedule: payoutSchedule(HOLD_DAYS) } } });
+}
+
+/** Pauses or restarts Stripe's automatic payouts for one creator. */
+export async function setStripePayoutsPaused(accountId: string, paused: boolean, holdDays: number) {
+  await stripe().accounts.update(accountId, { settings: { payouts: { schedule: payoutSchedule(holdDays, paused) } } });
 }
 
 /** Percent fee for subscriptions (Stripe takes a percent there): our cut plus the card fee estimate. */
@@ -214,5 +224,13 @@ export async function transferToCreator(input: { paymentIntentId: string; amount
   return s.transfers.create(
     { amount: input.amountCents, currency: "usd", destination: input.destination, transfer_group: input.orderId, source_transaction: charge, metadata: { orderId: input.orderId } },
     { idempotencyKey: `deal-transfer-${input.orderId}` },
+  );
+}
+
+/** A credit from our team: sends money from TraderTrades' Stripe balance to a creator's Stripe account. */
+export async function sendCredit(input: { destination: string; amountCents: number; ledgerId: string; description: string }) {
+  return stripe().transfers.create(
+    { amount: input.amountCents, currency: "usd", destination: input.destination, description: input.description, metadata: { ledgerId: input.ledgerId } },
+    { idempotencyKey: `credit-${input.ledgerId}` },
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import {
+  Banknote,
   BadgeCheck,
   Building2,
   FileCheck2,
@@ -76,6 +77,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </SideLink>
           <SideLink href="/admin/orders" icon={<Receipt />}>
             Orders
+          </SideLink>
+          <SideLink href="/admin/payouts" icon={<Banknote />}>
+            Payouts
           </SideLink>
           <SideLink href="/admin/directory" icon={<Building2 />}>
             Directory

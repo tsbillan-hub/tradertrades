@@ -11,7 +11,7 @@ import { flash } from "@/server/flash";
 import { audit } from "@/server/audit";
 import { denyRefund, processRefund } from "@/server/commerce/refunds";
 import { payoutDashboardLink, payoutOnboardingLink, syncAccount } from "@/server/stripe";
-import { availableBalance } from "@/server/commerce/balance";
+import { payOutAvailable, payoutBlocker } from "@/server/commerce/payouts";
 
 async function sellerRefund(refundId: string) {
   const user = await requireCreator();
@@ -97,14 +97,17 @@ export async function openPayoutDashboard() {
 export async function requestTestPayout() {
   const user = await requireCreator();
   if (features.stripe) return;
-  const { available, entryIds } = await availableBalance(user.id);
-  if (available <= 0) {
+  const blocked = await payoutBlocker(user.id);
+  if (blocked) {
+    await flash(blocked, "info");
+    return;
+  }
+  const payout = await payOutAvailable(user.id);
+  if (!payout) {
     await flash("Nothing is available to pay out yet. Sales become available after the hold period.", "info");
     return;
   }
-  const payout = await db.payout.create({ data: { userId: user.id, amountCents: available, provider: "TEST", status: "PAID", paidAt: new Date(), arrivalDate: new Date() } });
-  await db.ledgerEntry.updateMany({ where: { id: { in: entryIds } }, data: { payoutId: payout.id } });
-  await audit(user.id, "payout.test", { type: "payout", id: payout.id }, { amount: available });
+  await audit(user.id, "payout.test", { type: "payout", id: payout.id }, { amount: payout.amountCents });
   await flash("Test payout recorded. With Stripe connected this lands in your bank.");
   refresh();
 }

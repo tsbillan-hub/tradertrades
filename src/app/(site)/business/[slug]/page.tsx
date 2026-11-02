@@ -6,6 +6,7 @@ import { categoryInfo } from "@/lib/constants";
 import { formatDate, plural } from "@/lib/utils";
 import { requireBusiness } from "@/server/dal";
 import { featuredPlaceLabel } from "@/server/business";
+import { clickSourceLabel } from "@/lib/click-sources";
 import { Avatar } from "@/components/ui/avatar";
 import { PageHeader, RatingSummary, Stat } from "@/components/ui/misc";
 import { Panel } from "@/components/ui/panel";
@@ -13,17 +14,6 @@ import { Panel } from "@/components/ui/panel";
 export const metadata: Metadata = { title: "Business dashboard" };
 
 const DAY = 86_400_000;
-/** Where a "Visit website" click came from, in words (see the `from` on each /go link). */
-const SOURCE: Record<string, string> = {
-  company: "Your listing",
-  "company-offer": "Offers on your listing",
-  "offers-page": "The offers page",
-  "directory-search": "Directory search",
-  "directory-top": "Directory home",
-  category: "Your category's list",
-  sponsored: "Sponsored spots",
-  similar: "Similar companies",
-};
 
 export default async function BusinessOverview({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -59,7 +49,7 @@ export default async function BusinessOverview({ params }: { params: Promise<{ s
   ].filter((x) => x !== null);
   const change = clicksBefore ? Math.round(((clicks - clicksBefore) / clicksBefore) * 100) : null;
   const sources = bySource
-    .map((s) => ({ label: SOURCE[(s.source ?? "").split(":")[0]] ?? "Other pages", n: s._count }))
+    .map((s) => ({ label: clickSourceLabel(s.source), n: s._count }))
     .reduce<{ label: string; n: number }[]>((all, s) => {
       const hit = all.find((x) => x.label === s.label);
       if (hit) hit.n += s.n;
@@ -89,7 +79,7 @@ export default async function BusinessOverview({ params }: { params: Promise<{ s
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Stat
-          label="Visits to your website"
+          label="Clicks to your website"
           value={clicks.toLocaleString()}
           sub={change === null ? "Last 30 days" : `Last 30 days · ${change >= 0 ? "+" : ""}${change}% on the 30 before`}
         />
@@ -128,7 +118,15 @@ export default async function BusinessOverview({ params }: { params: Promise<{ s
           </ul>
         </Panel>
 
-        <Panel title="Where your visits come from" description="Last 30 days">
+        <Panel
+          title="Where clicks to your site come from"
+          description="Last 30 days"
+          action={
+            <Link href={`${base}/stats`} className="text-sm font-semibold hover:underline">
+              All stats
+            </Link>
+          }
+        >
           {sources.length ? (
             <ul className="-my-2 divide-y divide-line text-sm">
               {sources.map((s) => (
@@ -142,7 +140,7 @@ export default async function BusinessOverview({ params }: { params: Promise<{ s
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted">No visits yet. Traders reach your site from your listing&apos;s &ldquo;Visit website&rdquo; button and from your offers.</p>
+            <p className="text-sm text-muted">No clicks yet. Traders reach your site from your listing&apos;s &ldquo;Visit website&rdquo; button and from your offers.</p>
           )}
         </Panel>
       </div>

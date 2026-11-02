@@ -22,6 +22,7 @@ import {
 import { db } from "@/lib/db";
 import { absoluteUrl, env, features } from "@/lib/env";
 import { getViewer } from "@/server/dal";
+import { trackView } from "@/server/views";
 import { CHANGE_CUTOFF_HOURS, openSlots } from "@/server/bookings";
 import { isPublicProduct } from "@/server/commerce/checkout";
 import { mediaUrlById } from "@/server/queries/media";
@@ -104,6 +105,7 @@ export default async function ProductPage({ params }: Props) {
   const tz = viewer?.timezone ?? product.creator.timezone;
   const isPublic = isPublicProduct(product);
   if (!isPublic && !isOwner && !viewer?.isAdmin) notFound();
+  await trackView({ target: "PRODUCT", targetId: product.id, ownerId: product.creatorId, viewerId: viewer?.id, skip: !isPublic || isOwner || viewer?.isAdmin });
 
   const creator = product.creator;
   const info = productTypeInfo(product.type);

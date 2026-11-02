@@ -4,13 +4,14 @@ import { absoluteUrl } from "@/lib/env";
 import { emails } from "@/server/email/templates";
 import { sendEmail } from "@/server/email/send";
 
-export type EmailPref = "orders" | "messages" | "community" | "bookings" | "reviews" | "business" | "marketing";
+export type EmailPref = "orders" | "messages" | "community" | "creators" | "bookings" | "reviews" | "business" | "marketing";
 
 export const EMAIL_PREFS: { key: EmailPref; label: string; hint: string }[] = [
   { key: "orders", label: "Purchases and sales", hint: "Receipts, new sales, refunds and payouts" },
   { key: "bookings", label: "Mentoring calls", hint: "New bookings, reminders and changes" },
   { key: "messages", label: "Messages", hint: "When someone messages you and you're away" },
   { key: "community", label: "Communities", hint: "Announcements and alerts from communities you're in" },
+  { key: "creators", label: "Emails from creators", hint: "Updates from creators you bought from. Every email also has a link to stop that one creator's emails" },
   { key: "reviews", label: "Reviews", hint: "New reviews and replies" },
   { key: "business", label: "Brand deals and jobs", hint: "Campaign invites and deals, listing claims, job applications and replies" },
   { key: "marketing", label: "News from TraderTrades", hint: "New features and the occasional update" },
@@ -22,6 +23,7 @@ export function emailPrefs(raw: unknown): Record<EmailPref, boolean> {
     bookings: true,
     messages: true,
     community: true,
+    creators: true,
     reviews: true,
     business: true,
     marketing: false,

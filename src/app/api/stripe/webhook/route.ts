@@ -10,6 +10,7 @@ import {
   syncConnectedAccount,
   syncStripeSubscription,
 } from "@/server/commerce/stripe-sync";
+import { recordStripePayout } from "@/server/commerce/payouts";
 
 export const runtime = "nodejs";
 
@@ -58,6 +59,14 @@ export async function POST(request: Request) {
         break;
       case "account.updated":
         await syncConnectedAccount(event.data.object as Stripe.Account);
+        break;
+      // Payouts from a creator's own Stripe balance to their bank (connected account events).
+      case "payout.created":
+      case "payout.updated":
+      case "payout.paid":
+      case "payout.failed":
+      case "payout.canceled":
+        if (event.account) await recordStripePayout(event.account, event.data.object as Stripe.Payout);
         break;
       default:
         break;

@@ -15,11 +15,13 @@ type LayoutInput = {
   cta?: { label: string; url: string };
   rows?: [string, string][];
   footnote?: string;
+  /** A link in the footer to stop this kind of email, like one creator's updates. */
+  unsubscribe?: { label: string; url: string };
 };
 
 /** Plain, readable email in the TraderTrades colours. Paragraphs are plain text and get escaped. */
 export function layout(input: LayoutInput): EmailContent {
-  const { subject, preheader, heading, paragraphs, cta, rows, footnote } = input;
+  const { subject, preheader, heading, paragraphs, cta, rows, footnote, unsubscribe } = input;
   const rowsHtml = rows?.length
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border-top:1px solid #E3D9C6">${rows
         .map(
@@ -36,20 +38,21 @@ export function layout(input: LayoutInput): EmailContent {
 <tr><td style="padding:0 4px 16px 4px;font-weight:900;font-size:18px;letter-spacing:-0.02em">TraderTrades</td></tr>
 <tr><td style="background:#FFFDF8;border:1px solid #E3D9C6;border-radius:12px;padding:28px">
 <h1 style="margin:0 0 12px 0;font-size:22px;line-height:1.25;letter-spacing:-0.02em">${esc(heading)}</h1>
-${paragraphs.map((p) => `<p style="margin:0 0 12px 0;font-size:15px;line-height:1.55;color:#3B352D">${esc(p)}</p>`).join("")}
+${paragraphs.map((p) => `<p style="margin:0 0 12px 0;font-size:15px;line-height:1.55;color:#3B352D">${esc(p).replace(/\n/g, "<br>")}</p>`).join("")}
 ${rowsHtml}
 ${cta ? `<p style="margin:20px 0 4px 0"><a href="${esc(cta.url)}" style="display:inline-block;background:#16130F;color:#F6F1E7;text-decoration:none;font-weight:600;font-size:15px;padding:12px 18px;border-radius:8px">${esc(cta.label)}</a></p><p style="margin:12px 0 0 0;font-size:12px;color:#968C7A;word-break:break-all">Or open this link: ${esc(cta.url)}</p>` : ""}
 </td></tr>
-<tr><td style="padding:16px 4px;font-size:12px;line-height:1.5;color:#968C7A">${esc(footnote ?? "You're getting this email because of your TraderTrades account.")} <a href="${esc(absoluteUrl("/settings/notifications"))}" style="color:#6B6357">Email settings</a></td></tr>
+<tr><td style="padding:16px 4px;font-size:12px;line-height:1.5;color:#968C7A">${esc(footnote ?? "You're getting this email because of your TraderTrades account.")} ${unsubscribe ? `<a href="${esc(unsubscribe.url)}" style="color:#6B6357">${esc(unsubscribe.label)}</a> · ` : ""}<a href="${esc(absoluteUrl("/settings/notifications"))}" style="color:#6B6357">Email settings</a></td></tr>
 </table></td></tr></table></body></html>`;
   const text = [
     heading,
     "",
-    ...paragraphs,
+    paragraphs.join("\n\n"),
     ...(rows?.map(([k, v]) => `${k}: ${v}`) ?? []),
     cta ? `\n${cta.label}: ${cta.url}` : "",
     "",
     footnote ?? "",
+    unsubscribe ? `${unsubscribe.label}: ${unsubscribe.url}` : "",
   ].join("\n");
   return { subject, html, text };
 }
@@ -104,6 +107,24 @@ export const emails = {
       subject: `${code} is your TraderTrades code`,
       heading: "Confirm your work email",
       paragraphs: [`Hi ${name}, enter this code to confirm you work at ${company}:`, code, "The code works for 24 hours."],
+    });
+  },
+  /** An update a creator sends to their customers. The body is their own words, as plain text. */
+  broadcast(input: { creatorName: string; subject: string; body: string; pageUrl: string; reason: string; unsubscribeUrl: string }) {
+    return layout({
+      subject: input.subject,
+      preheader: input.body.replace(/\s+/g, " ").slice(0, 140),
+      heading: input.subject,
+      paragraphs: [
+        ...input.body
+          .split(/\n\s*\n/)
+          .map((p) => p.trim())
+          .filter(Boolean),
+        input.creatorName,
+      ],
+      cta: { label: `Open ${input.creatorName}'s page`, url: input.pageUrl },
+      footnote: input.reason,
+      unsubscribe: { label: `Stop emails from ${input.creatorName}`, url: input.unsubscribeUrl },
     });
   },
   generic(input: { subject: string; heading: string; body: string[]; cta?: { label: string; url: string }; rows?: [string, string][] }) {

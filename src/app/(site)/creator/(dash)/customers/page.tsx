@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search, Users } from "lucide-react";
+import { Mail, Search, Users } from "lucide-react";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { requireCreator } from "@/server/dal";
@@ -64,7 +64,15 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Customers" description="Everyone who has bought from you or joined, and where they came from." />
+      <PageHeader
+        title="Customers"
+        description="Everyone who has bought from you or joined, and where they came from."
+        actions={
+          <Link href="/creator/customers/email" className="btn btn-secondary">
+            <Mail /> Email your customers
+          </Link>
+        }
+      />
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
         <Stat label="Your own buyers" value={own} sub="Came through your link: 0% fee for good" />
         <Stat label="Found by TraderTrades" value={found} sub="30% on their first purchase, then 5%" />

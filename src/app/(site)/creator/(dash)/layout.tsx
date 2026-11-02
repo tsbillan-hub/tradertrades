@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgePercent, Banknote, CalendarDays, ExternalLink, Film, Handshake, LayoutDashboard, Package, Receipt, Settings, Users } from "lucide-react";
+import { BadgePercent, Banknote, CalendarDays, ChartColumn, ExternalLink, Film, Handshake, LayoutDashboard, Package, Receipt, Settings, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireCreator } from "@/server/dal";
 import { SideLink } from "@/components/layout/nav-link";
@@ -25,6 +25,7 @@ export default async function CreatorDashboardLayout({ children }: { children: R
       <div className="mt-4 grid gap-6 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-10">
         <nav className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:sticky lg:top-24 lg:mx-0 lg:flex-col lg:self-start lg:px-0" aria-label="Creator dashboard">
           <SideLink href="/creator" exact icon={<LayoutDashboard />}>Overview</SideLink>
+          <SideLink href="/creator/stats" icon={<ChartColumn />}>Stats</SideLink>
           <SideLink href="/creator/products" icon={<Package />}>Products</SideLink>
           <SideLink href="/creator/videos" icon={<Film />}>Videos</SideLink>
           <SideLink href="/creator/calendar" icon={<CalendarDays />} count={upcomingCalls}>Calendar</SideLink>

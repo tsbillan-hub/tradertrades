@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Banknote, CheckCircle2, FlaskConical } from "lucide-react";
 import { db } from "@/lib/db";
 import { features } from "@/lib/env";
 import { requireCreator } from "@/server/dal";
 import { balances } from "@/server/commerce/balance";
+import { nextPayoutDate } from "@/server/commerce/payouts";
 import { syncAccount } from "@/server/stripe";
 import { openPayoutDashboard, requestTestPayout, setUpPayouts } from "@/server/actions/sales";
 import { ActionButton } from "@/components/ui/form";
@@ -13,6 +15,13 @@ import { HOLD_DAYS, NEW_SELLER_HOLD_DAYS, NEW_SELLER_PERIOD_DAYS } from "@/lib/f
 import { cn, formatDate, money, msSince } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Payouts" };
+
+const PAYOUT_STATUS: Record<string, { label: string; tone: string }> = {
+  PENDING: { label: "Starting", tone: "badge-outline" },
+  IN_TRANSIT: { label: "On its way", tone: "badge-info" },
+  PAID: { label: "Sent", tone: "badge-ok" },
+  FAILED: { label: "Failed", tone: "badge-bad" },
+};
 
 const TYPE_LABEL: Record<string, string> = {
   SALE: "Sale",
@@ -44,6 +53,9 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
   ]);
   const ready = features.stripe ? c.stripeChargesEnabled : c.testPayoutsReady;
   const newSeller = !c.approvedAt || msSince(c.approvedAt) < NEW_SELLER_PERIOD_DAYS * 86400_000;
+  const paused = Boolean(c.payoutsPausedAt) || user.status !== "ACTIVE";
+  const next = nextPayoutDate();
+  const nextLabel = next.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 
   return (
     <div className="space-y-6">
@@ -53,6 +65,17 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
         <Notice tone="warn" title="Preview mode">
           Stripe isn&apos;t connected yet, so payouts here are a test: no real money moves. Once Stripe is connected, this page links your bank through
           Stripe and payouts are automatic.
+        </Notice>
+      ) : null}
+
+      {paused ? (
+        <Notice tone="warn" title="Payouts are paused">
+          {c.payoutsPausedReason ?? (user.status !== "ACTIVE" ? "Your account is on hold." : "Our team is looking at something on your account.")} Sales still come in and
+          your balance is safe; nothing is sent to your bank until this is cleared. Questions?{" "}
+          <Link href="/help#contact" className="underline underline-offset-2">
+            Contact us
+          </Link>
+          .
         </Notice>
       ) : null}
 
@@ -92,15 +115,27 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Stat label="On hold" value={money(bal.pendingCents, { exact: true })} sub={`Sales wait ${newSeller ? NEW_SELLER_HOLD_DAYS : HOLD_DAYS} days to cover refunds`} />
-        <Stat label="Ready to pay out" value={money(bal.availableCents, { exact: true })} />
+        <Stat
+          label="Ready to pay out"
+          value={money(bal.availableCents, { exact: true })}
+          sub={
+            bal.availableCents < 0
+              ? "From a refund after a payout. It comes out of your next sales"
+              : paused
+                ? "Paused"
+                : ready
+                  ? `Next payout ${nextLabel}`
+                  : "Set up payouts to get paid"
+          }
+        />
         <Stat label="Paid out so far" value={money(bal.paidOutCents, { exact: true })} />
       </div>
       <p className="-mt-3 text-xs text-muted">
-        New sellers&apos; sales are held {NEW_SELLER_HOLD_DAYS} days for their first {NEW_SELLER_PERIOD_DAYS} days, then {HOLD_DAYS} days.
+        Payouts go out every Monday. New sellers&apos; sales are held {NEW_SELLER_HOLD_DAYS} days for their first {NEW_SELLER_PERIOD_DAYS} days, then {HOLD_DAYS} days.
       </p>
 
-      {!features.stripe && ready ? (
-        <Panel title="Test payout" description="Moves your available balance into a pretend payout, so you can see the whole flow.">
+      {!features.stripe && ready && !paused ? (
+        <Panel title="Test payout" description="Moves your available balance into a pretend payout now, instead of waiting for Monday, so you can see the whole flow.">
           {bal.availableCents > 0 ? (
             <ActionButton action={requestTestPayout} variant="secondary" size="md">
               <Banknote /> Pay out {money(bal.availableCents, { exact: true })} (test)
@@ -115,11 +150,17 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
         <Panel title="Payouts">
           <ul className="-my-2 divide-y divide-line text-sm">
             {payouts.map((p) => (
-              <li key={p.id} className="flex items-center justify-between py-3">
-                <span>
-                  {formatDate(p.paidAt ?? p.createdAt)} {p.provider === "TEST" ? <span className="badge badge-warn ml-1">Test</span> : null}
+              <li key={p.id} className="flex items-center justify-between gap-3 py-3">
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    {formatDate(p.paidAt ?? p.createdAt)}
+                    <span className={cn("badge", PAYOUT_STATUS[p.status]?.tone)}>{PAYOUT_STATUS[p.status]?.label ?? p.status}</span>
+                    {p.provider === "TEST" ? <span className="badge badge-warn">Test</span> : null}
+                  </span>
+                  {p.status === "FAILED" && p.failureReason ? <span className="mt-0.5 block text-xs text-down">{p.failureReason}</span> : null}
+                  {p.status === "IN_TRANSIT" && p.arrivalDate ? <span className="mt-0.5 block text-xs text-muted">Expected by {formatDate(p.arrivalDate)}</span> : null}
                 </span>
-                <span className="num font-semibold">{money(p.amountCents, { exact: true })}</span>
+                <span className="num shrink-0 font-semibold">{money(p.amountCents, { exact: true })}</span>
               </li>
             ))}
           </ul>

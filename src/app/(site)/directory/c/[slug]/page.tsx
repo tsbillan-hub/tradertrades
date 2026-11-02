@@ -21,6 +21,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { absoluteUrl } from "@/lib/env";
 import { getViewer } from "@/server/dal";
+import { trackView } from "@/server/views";
 import { companyCardSelect, goHref, publicCompanyWhere } from "@/server/queries/directory";
 import { toggleSaved } from "@/server/actions/profile";
 import { deleteCompanyReview, toggleHelpful } from "@/server/actions/directory";
@@ -83,6 +84,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
   const viewer = await getViewer();
   const isMember = Boolean(viewer && company.members.some((m) => m.userId === viewer.id));
   if (company.status !== "PUBLISHED" && !isMember && !viewer?.isAdmin) notFound();
+  await trackView({ target: "COMPANY", targetId: company.id, ownerId: company.id, viewerId: viewer?.id, skip: company.status !== "PUBLISHED" || isMember || viewer?.isAdmin });
 
   const sort = sp.sort && REVIEW_SORTS[sp.sort] ? sp.sort : "helpful";
   const page = Math.max(1, Math.min(500, Number(sp.page) || 1));

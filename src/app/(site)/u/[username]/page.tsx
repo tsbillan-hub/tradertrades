@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CalendarDays, Globe, MapPin, Share2, Sparkles, UserCheck, UserPlus } from "lucide-react";
 import { db } from "@/lib/db";
 import { getViewer } from "@/server/dal";
+import { trackView } from "@/server/views";
 import { publicProductWhere, productCardInclude } from "@/server/queries/products";
 import { followUser } from "@/server/actions/profile";
 import { Avatar } from "@/components/ui/avatar";
@@ -57,6 +58,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const viewer = await getViewer();
   const isMe = viewer?.id === user.id;
   const isCreator = user.creator?.status === "APPROVED";
+  if (isCreator) await trackView({ target: "PROFILE", targetId: user.id, ownerId: user.id, viewerId: viewer?.id, skip: isMe || viewer?.isAdmin });
 
   const [products, videos, reviews, reviewAgg, following, memberOf] = await Promise.all([
     isCreator ? db.product.findMany({ where: { ...publicProductWhere, creatorId: user.id }, include: productCardInclude, orderBy: [{ type: "asc" }, { salesCount: "desc" }] }) : [],
