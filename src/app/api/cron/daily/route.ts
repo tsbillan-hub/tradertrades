@@ -6,6 +6,7 @@ import { features } from "@/lib/env";
 import { shortenPayoutHold } from "@/server/stripe";
 import { NEW_SELLER_PERIOD_DAYS } from "@/lib/fees";
 import { bookingUpkeep } from "@/server/bookings";
+import { businessUpkeep } from "@/server/business";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -23,6 +24,8 @@ export async function GET(request: Request) {
   const refundsEscalated = await escalateOverdueRefunds(now);
   // Call reminders (calls in the next 36 hours) and calls that ended a day ago count as done.
   const bookings = await bookingUpkeep(now);
+  // Campaign work approved after 7 quiet days, Sponsored spots switched on and off, old job posts closed.
+  const business = await businessUpkeep(now);
   const [staleOrders, sessions, tokens, limits] = await Promise.all([
     db.order.updateMany({ where: { status: "PENDING", createdAt: { lt: dayAgo } }, data: { status: "CANCELED" } }),
     db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
@@ -50,6 +53,7 @@ export async function GET(request: Request) {
     subscriptions,
     refundsEscalated,
     bookings,
+    business,
     staleOrdersCanceled: staleOrders.count,
     cleaned: { sessions: sessions.count, tokens: tokens.count, rateLimits: limits.count },
   });

@@ -53,7 +53,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PER_PAGE,
       take: PER_PAGE,
-      include: { buyer: { select: { id: true, username: true } }, seller: { select: { id: true, username: true } } },
+      include: {
+        buyer: { select: { id: true, username: true } },
+        seller: { select: { id: true, username: true } },
+        company: { select: { name: true } },
+        deal: { select: { id: true, status: true, creator: { select: { id: true, username: true } } } },
+      },
     }),
     db.order.aggregate({ where, _sum: { amountCents: true, platformFeeCents: true, refundedCents: true } }),
   ]);
@@ -98,7 +103,9 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             <tbody className="divide-y divide-line">
               {rows.map((o) => {
                 const left = o.amountCents - o.refundedCents;
-                const canRefund = (o.status === "PAID" || o.status === "PARTIALLY_REFUNDED") && left > 0;
+                // Once a deal's work is approved the creator has the money, so it can't be pulled back from here.
+                const dealPaidOut = o.kind === "CAMPAIGN" && o.deal?.status !== "FUNDED" && o.deal?.status !== "SUBMITTED";
+                const canRefund = (o.status === "PAID" || o.status === "PARTIALLY_REFUNDED") && left > 0 && !dealPaidOut;
                 return (
                   <tr key={o.id}>
                     <td className="px-4 py-2.5 whitespace-nowrap">
@@ -113,9 +120,21 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                       <Link href={`/admin/users/${o.buyer.id}`} className="hover:underline">
                         @{o.buyer.username}
                       </Link>
+                      {o.company ? <div className="text-xs text-muted">for {o.company.name}</div> : null}
                     </td>
                     <td className="px-4 py-2.5">
-                      {o.seller ? (
+                      {o.deal ? (
+                        <>
+                          <Link href={`/admin/users/${o.deal.creator.id}`} className="hover:underline">
+                            @{o.deal.creator.username}
+                          </Link>
+                          <div className="text-xs text-muted">
+                            <Link href={`/deals/${o.deal.id}`} className="hover:underline">
+                              Campaign deal
+                            </Link>
+                          </div>
+                        </>
+                      ) : o.seller ? (
                         <Link href={`/admin/users/${o.seller.id}`} className="hover:underline">
                           @{o.seller.username}
                         </Link>
@@ -134,7 +153,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                     <td className="px-4 py-2.5">
                       <OrderStatusBadge status={o.status} />
                     </td>
-                    <td className="px-4 py-2.5 text-right">{canRefund ? <AdminRefundButton orderId={o.id} left={money(left)} label={orderNumber(o.number)} /> : null}</td>
+                    <td className="px-4 py-2.5 text-right">{canRefund ? <AdminRefundButton orderId={o.id} left={money(left)} label={orderNumber(o.number)} kind={o.kind} /> : null}</td>
                   </tr>
                 );
               })}

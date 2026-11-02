@@ -41,7 +41,7 @@ export default async function ForBusinessPage() {
             <h1 className="mt-3 text-[38px] leading-[1.05] sm:text-[56px]">Meet traders while they&apos;re choosing.</h1>
             <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-ink-2">
               Prop firms, brokers, platforms and tools are listed for free. Claim yours to keep it right, answer reviews and post offers. Then reach more traders with
-              Featured spots and campaigns with trading creators.
+              Sponsored spots and paid campaigns with trading creators.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href={primaryHref} className="btn btn-primary btn-lg">
@@ -82,7 +82,7 @@ export default async function ForBusinessPage() {
             { icon: Ticket, t: "Post offers", d: "Discount codes and deals show on your listing and in the offers list." },
             { icon: MousePointerClick, t: "See your clicks", d: "Count the traders who visit your site from TraderTrades, by day and by page." },
             { icon: Video, t: "Add videos", d: "Walkthroughs and explainers play right on your listing." },
-            { icon: Briefcase, t: "Post jobs for free", d: "Hire editors, moderators, analysts and developers from the trading world." },
+            { icon: Briefcase, t: "Post jobs for free", d: "Hire editors, clippers, moderators and developers from the trading world, on the jobs board." },
           ].map((f) => (
             <div key={f.t} className="card p-5">
               <f.icon className="size-5 text-accent" />
@@ -99,17 +99,17 @@ export default async function ForBusinessPage() {
           <div className="p-6 sm:p-8">
             <div className="flex items-center gap-2 text-accent">
               <Megaphone className="size-5" />
-              <span className="kicker text-accent">Featured spots</span>
+              <span className="kicker text-accent">Sponsored spots</span>
             </div>
             <h2 className="mt-3 text-3xl">Be first in line, clearly labelled</h2>
             <p className="mt-3 text-muted">
-              Book a week at the top of a directory category or on the home page. Every Featured spot says &ldquo;Sponsored&rdquo;. Paying never changes your rating,
+              Book a week at the top of a directory category or on the home page. Every spot is labelled &ldquo;Sponsored&rdquo;. Paying never changes your rating,
               your reviews or where you rank in normal results.
             </p>
             <ul className="mt-5 space-y-2 text-sm text-ink-2">
               <li>• Book by the week, up to 8 weeks ahead</li>
               <li>• Limited spots, so each one gets seen</li>
-              <li>• Clicks and views reported in your dashboard</li>
+              <li>• Clicks from each spot shown in your dashboard</li>
               <li>• We can refuse companies with unresolved complaints</li>
             </ul>
           </div>
@@ -168,7 +168,7 @@ export default async function ForBusinessPage() {
               { t: "Post a brief", d: "Say what you want (a review video, a tutorial, a live session), your budget, dates and which markets you serve." },
               { t: "Pick creators", d: "Filter by market and audience size. Creators apply to your brief, or you invite them." },
               { t: "Agree and pay", d: "Agree the price and what gets delivered. You pay into the deal, so the creator knows the money is there." },
-              { t: "Approve the work", d: "The creator sends links to what they made. You approve it, and they get paid. Disagreements come to our team." },
+              { t: "Approve the work", d: "The creator sends links to what they made. Approve it or ask for changes. If you say nothing for 7 days it's approved. Disagreements come to our team." },
             ].map((s, i) => (
               <li key={s.t} className="card flex gap-4 p-5">
                 <span className="num grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-ink">{i + 1}</span>
@@ -184,7 +184,10 @@ export default async function ForBusinessPage() {
               </div>
               <p className="mt-1.5 text-muted">
                 Sponsored content must be labelled as an ad. No income claims or &ldquo;easy money&rdquo; messages. Prop firm promotions must link to the firm&apos;s full
-                rules. Creators can turn down any brief.
+                rules. Creators can turn down any brief.{" "}
+                <Link href="/rules#campaigns" className="link">
+                  Read the campaign rules
+                </Link>
               </p>
             </li>
           </ol>
@@ -205,7 +208,7 @@ export default async function ForBusinessPage() {
                 "A higher rating, or a better spot in normal results",
                 "Removing or hiding honest reviews",
                 "Fake reviews from your own team",
-                "Featured spots that don't say Sponsored",
+                "Sponsored spots that don't say Sponsored",
               ].map((t) => (
                 <li key={t} className="rounded-xl border border-line p-4 text-sm font-semibold">
                   {t}

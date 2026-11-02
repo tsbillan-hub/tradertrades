@@ -59,6 +59,50 @@ const LABELS: Record<string, string> = {
   "booking.cancel": "Canceled a call",
   "booking.done": "Marked a call done",
   "booking.no_show": "Marked a no-show",
+  "claim.start": "Started claiming a listing",
+  "claim.documents": "Sent documents to claim a listing",
+  "claim.verified": "Claimed a listing with a work email",
+  "claim.approved": "Approved a listing claim",
+  "claim.rejected": "Turned down a listing claim",
+  "company.edit_by_team": "Company team edited its listing",
+  "team.leave": "Left a company's team",
+  "team.remove": "Removed someone from a company's team",
+  "team.role": "Changed a team member's role",
+  "featured.start": "Started booking a Sponsored spot",
+  "featured.booked": "Booked a Sponsored spot",
+  "featured.canceled": "Ended a Sponsored spot",
+  "featured.refunded": "Refunded a Sponsored spot",
+  "campaign.create": "Made a campaign",
+  "campaign.update": "Edited a campaign",
+  "campaign.publish": "Put a campaign live",
+  "campaign.open": "Opened a campaign",
+  "campaign.close": "Closed a campaign",
+  "deal.apply": "Applied to a campaign",
+  "deal.invite": "Invited a creator to a campaign",
+  "deal.accept": "Accepted a creator's application",
+  "deal.decline": "Declined a creator's application",
+  "deal.invite_accept": "Said yes to a campaign invite",
+  "deal.invite_decline": "Said no to a campaign invite",
+  "deal.pay_start": "Started paying into a deal",
+  "deal.funded": "Paid into a deal",
+  "deal.submit": "Sent the work for a deal",
+  "deal.changes": "Asked for changes on a deal",
+  "deal.approved": "Approved a deal's work",
+  "deal.auto_approved": "Deal approved automatically",
+  "deal.cancel": "Canceled a deal",
+  "deal.withdraw": "Withdrew a campaign application",
+  "deal.canceled_refunded": "Canceled a paid deal (refunded)",
+  "deal.dispute": "Asked our team to step in on a deal",
+  "deal.dispute_paid": "Decided a deal dispute: creator paid",
+  "deal.dispute_refunded": "Decided a deal dispute: company refunded",
+  "deal.dispute_closed": "Closed a deal dispute: deal carries on",
+  "job.create": "Posted a job",
+  "job.update": "Edited a job post",
+  "job.close": "Closed a job post",
+  "job.reopen": "Reopened a job post",
+  "job.apply": "Applied to a job",
+  "job.withdraw": "Withdrew a job application",
+  "job.application_status": "Answered a job application",
 };
 
 export function auditLabel(action: string) {
@@ -79,6 +123,12 @@ function targetHref(type: string | null, id: string | null) {
       return `/admin/listings?tab=all&q=${encodeURIComponent(id)}`;
     case "order":
       return `/admin/orders?q=${encodeURIComponent(id)}`;
+    case "deal":
+      return `/deals/${id}`;
+    case "job":
+      return `/jobs/${id}`;
+    case "campaign":
+      return `/campaigns/${id}`;
     default:
       return null;
   }

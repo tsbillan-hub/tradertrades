@@ -10,7 +10,9 @@ export function Panel({
   className,
   action,
   danger,
+  id,
 }: {
+  id?: string;
   title: ReactNode;
   description?: ReactNode;
   children?: ReactNode;
@@ -20,7 +22,7 @@ export function Panel({
   danger?: boolean;
 }) {
   return (
-    <section className={cn("card", danger && "border-down/40", className)}>
+    <section id={id} className={cn("card", id && "scroll-mt-24", danger && "border-down/40", className)}>
       <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
         <div className="min-w-0">
           <h2 className={cn("text-[17px]", danger && "text-down")}>{title}</h2>

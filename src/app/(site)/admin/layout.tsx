@@ -4,9 +4,12 @@ import {
   Building2,
   FileCheck2,
   Flag,
+  Handshake,
+  KeyRound,
   LayoutDashboard,
   Lightbulb,
   Mail,
+  Megaphone,
   Package,
   Percent,
   Receipt,
@@ -61,6 +64,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <SideLink href="/admin/proof" icon={<FileCheck2 />} count={n.proof}>
             Review proof
           </SideLink>
+          <SideLink href="/admin/claims" icon={<KeyRound />} count={n.claims}>
+            Listing claims
+          </SideLink>
+          <SideLink href="/admin/deals" icon={<Handshake />} count={n.deals}>
+            Deal disputes
+          </SideLink>
           <Group label="Manage" />
           <SideLink href="/admin/users" icon={<Users />}>
             Accounts
@@ -70,6 +79,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </SideLink>
           <SideLink href="/admin/directory" icon={<Building2 />}>
             Directory
+          </SideLink>
+          <SideLink href="/admin/featured" icon={<Megaphone />}>
+            Sponsored spots
           </SideLink>
           <Group label="Records" />
           <SideLink href="/admin/emails" icon={<Mail />}>

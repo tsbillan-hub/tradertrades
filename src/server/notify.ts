@@ -12,7 +12,7 @@ export const EMAIL_PREFS: { key: EmailPref; label: string; hint: string }[] = [
   { key: "messages", label: "Messages", hint: "When someone messages you and you're away" },
   { key: "community", label: "Communities", hint: "Announcements and alerts from communities you're in" },
   { key: "reviews", label: "Reviews", hint: "New reviews and replies" },
-  { key: "business", label: "Business and campaigns", hint: "Claims, campaign invites and deals" },
+  { key: "business", label: "Brand deals and jobs", hint: "Campaign invites and deals, listing claims, job applications and replies" },
   { key: "marketing", label: "News from TraderTrades", hint: "New features and the occasional update" },
 ];
 

@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 
 /** How many things wait in each admin queue. A report or flag counts once per reported thing. */
 export async function adminCounts() {
-  const [reports, flags, verification, suggestions, proof, refunds, listings] = await Promise.all([
+  const [reports, flags, verification, suggestions, proof, refunds, listings, claims, deals] = await Promise.all([
     db.report.groupBy({ by: ["targetType", "targetId"], where: { status: "OPEN" } }).then((g) => g.length),
     db.moderationFlag.groupBy({ by: ["targetType", "targetId"], where: { status: "OPEN" } }).then((g) => g.length),
     db.verificationRequest.count({ where: { status: "PENDING", kind: { in: ["IDENTITY", "SOCIALS"] } } }),
@@ -12,8 +12,11 @@ export async function adminCounts() {
     db.companyReview.count({ where: { proofStatus: "PENDING", status: { not: "REMOVED" } } }),
     db.refund.count({ where: { status: "REQUESTED", escalatedAt: { not: null } } }),
     db.product.count({ where: { status: "PUBLISHED", checkedAt: null, isSample: false } }),
+    // Claims sent with documents wait for us; email claims only wait for the person's own code.
+    db.companyClaim.count({ where: { status: "PENDING", documentIds: { isEmpty: false } } }),
+    db.deal.count({ where: { disputedAt: { not: null }, resolvedAt: null, status: { in: ["FUNDED", "SUBMITTED"] } } }),
   ]);
-  return { reports, flags, verification, suggestions, proof, refunds, listings };
+  return { reports, flags, verification, suggestions, proof, refunds, listings, claims, deals };
 }
 
 export type AdminCounts = Awaited<ReturnType<typeof adminCounts>>;

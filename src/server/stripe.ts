@@ -183,3 +183,36 @@ export async function refundPayment(input: { paymentIntentId: string; amountCent
 export async function retrieveCheckout(sessionId: string) {
   return stripe().checkout.sessions.retrieve(sessionId, { expand: ["subscription"] });
 }
+
+/**
+ * Business payments (Sponsored spots, money paid into a campaign deal) are charged to TraderTrades itself.
+ * Deal money is moved to the creator later, when the company approves the work.
+ */
+export async function createPlatformCheckoutSession(input: { orderId: string; buyerEmail: string; title: string; description?: string | null; amountCents: number; successPath: string; cancelPath: string; metadata: Record<string, string> }) {
+  return stripe().checkout.sessions.create({
+    mode: "payment",
+    customer_email: input.buyerEmail,
+    client_reference_id: input.orderId,
+    metadata: { ...input.metadata, orderId: input.orderId },
+    success_url: absoluteUrl(input.successPath),
+    cancel_url: absoluteUrl(input.cancelPath),
+    line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: input.amountCents, product_data: { name: input.title, description: input.description?.slice(0, 300) || undefined } } }],
+    payment_intent_data: { metadata: { orderId: input.orderId }, transfer_group: input.orderId },
+  });
+}
+
+/** Refunds a payment that was charged to TraderTrades (no creator transfer to undo). */
+export async function refundPlatformPayment(input: { paymentIntentId: string; amountCents: number; orderId: string }) {
+  return stripe().refunds.create({ payment_intent: input.paymentIntentId, amount: input.amountCents, metadata: { orderId: input.orderId, source: "tradertrades" } });
+}
+
+/** Sends a creator their share of an approved deal, tied to the original charge so it can go before the charge settles. */
+export async function transferToCreator(input: { paymentIntentId: string; amountCents: number; destination: string; orderId: string }) {
+  const s = stripe();
+  const intent = await s.paymentIntents.retrieve(input.paymentIntentId);
+  const charge = typeof intent.latest_charge === "string" ? intent.latest_charge : (intent.latest_charge?.id ?? undefined);
+  return s.transfers.create(
+    { amount: input.amountCents, currency: "usd", destination: input.destination, transfer_group: input.orderId, source_transaction: charge, metadata: { orderId: input.orderId } },
+    { idempotencyKey: `deal-transfer-${input.orderId}` },
+  );
+}

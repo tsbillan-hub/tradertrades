@@ -45,7 +45,13 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
   const load = () =>
     db.order.findUnique({
       where: { id: orderId },
-      include: { product: { include: { creator: { select: { username: true, displayName: true } } } }, subscription: true },
+      include: {
+        product: { include: { creator: { select: { username: true, displayName: true } } } },
+        subscription: true,
+        company: { select: { name: true, slug: true } },
+        featuredSlot: true,
+        deal: { include: { creator: { select: { displayName: true } }, campaign: { select: { title: true } } } },
+      },
     });
   let order = await load();
   if (!order || order.buyerId !== user.id) redirect("/library");
@@ -62,6 +68,13 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
   }
 
   const product = order.product;
+  const business = order.kind === "FEATURED" || order.kind === "CAMPAIGN";
+  const businessBack =
+    order.kind === "FEATURED" && order.company
+      ? { href: `/business/${order.company.slug}/featured`, label: "Back to Sponsored spots" }
+      : order.kind === "CAMPAIGN" && order.dealId
+        ? { href: `/deals/${order.dealId}`, label: "Back to the deal" }
+        : null;
   if (order.status === "PENDING") {
     return (
       <div className="container-tt max-w-lg py-16 text-center">
@@ -78,11 +91,59 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
         <CircleX className="mx-auto size-10 text-down" />
         <h1 className="mt-5 text-[28px]">The payment didn&apos;t go through</h1>
         <p className="mt-2 text-muted">Nothing was charged. You can try again.</p>
-        {product ? (
+        {businessBack ? (
+          <Link href={businessBack.href} className="btn btn-primary mt-6">
+            {businessBack.label}
+          </Link>
+        ) : product ? (
           <Link href={productPath(product.creator.username, product.slug)} className="btn btn-primary mt-6">
             Back to {product.title}
           </Link>
         ) : null}
+      </div>
+    );
+  }
+
+  if (business) {
+    const slot = order.featuredSlot;
+    const deal = order.deal;
+    return (
+      <div className="container-tt max-w-xl py-12 sm:py-16">
+        <div className="text-center">
+          <span className="mx-auto grid size-14 place-items-center rounded-full bg-up-soft text-up">
+            <CircleCheck className="size-7" />
+          </span>
+          <h1 className="mt-5 text-[30px]">{order.kind === "FEATURED" ? "Your Sponsored spot is booked" : "Paid into the deal"}</h1>
+          <p className="mt-2 text-[15px] text-muted">
+            {order.kind === "FEATURED"
+              ? slot && slot.startsAt > new Date()
+                ? `It goes live on ${formatDate(slot.startsAt)} and runs for the week.`
+                : "It's live now, until the end of the week."
+              : deal
+                ? `${deal.creator.displayName} can start on "${deal.campaign.title}" now. We hold the money until you approve the work, or 7 days after they send it.`
+                : "The creator can start now."}
+          </p>
+        </div>
+        <div className="card mt-8 px-5 py-2">
+          <KeyValue
+            items={[
+              { label: "Order", value: <span className="num">{orderNumber(order.number)}</span> },
+              { label: "For", value: order.company?.name ?? "Your company" },
+              { label: "Paid", value: <span className="num">{money(order.amountCents, { exact: true })}</span> },
+              ...(order.paidAt ? [{ label: "Date", value: formatDate(order.paidAt) }] : []),
+            ]}
+          />
+        </div>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          {businessBack ? (
+            <Link href={businessBack.href} className="btn btn-primary">
+              {order.kind === "FEATURED" ? "See your Sponsored spots" : "Open the deal"}
+            </Link>
+          ) : null}
+          <Link href="/settings/billing" className="btn btn-ghost">
+            Receipts
+          </Link>
+        </div>
       </div>
     );
   }

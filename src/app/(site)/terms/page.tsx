@@ -43,7 +43,7 @@ export default function TermsPage() {
       <Section title="5. Businesses">
         <ul>
           <li>Directory listings are written from public information and may be claimed by the company. A claimed listing must stay accurate.</li>
-          <li>Featured spots are always labelled Sponsored. Paying for a spot never changes reviews or ratings.</li>
+          <li>Sponsored spots are always labelled Sponsored. Paying for a spot never changes reviews or ratings.</li>
           <li>Campaign deals are agreements between the business and the creator. Creators must label paid promotion as an ad wherever they post it.</li>
         </ul>
       </Section>

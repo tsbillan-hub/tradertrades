@@ -9,6 +9,7 @@ import { audit } from "@/server/audit";
 import { attributionFor } from "@/server/commerce/attribution";
 import { completeOrder, createPendingOrder, endSubscription } from "@/server/commerce/orders";
 import { recordRefund } from "@/server/commerce/refunds";
+import { afterOutsideRefund } from "@/server/business";
 import { setSubscriptionFee, stripe } from "@/server/stripe";
 
 const idOf = (v: string | { id: string } | null | undefined) => (typeof v === "string" ? v : (v?.id ?? null));
@@ -152,6 +153,7 @@ export async function recordOutsideRefund(r: Stripe.Refund) {
       : null;
   if (!order) return;
   await recordRefund(order.id, Math.min(r.amount, order.amountCents - order.refundedCents), 0, { note: "Refunded in Stripe" });
+  if (order.kind === "CAMPAIGN" || order.kind === "FEATURED") await afterOutsideRefund(order.id);
   await audit(null, "refund.outside", { type: "order", id: order.id }, { amount: r.amount });
 }
 

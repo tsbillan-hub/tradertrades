@@ -157,6 +157,9 @@ export async function replyToCompanyReview(_: ActionState, formData: FormData): 
       email: "reviews",
     });
   }
+  // On the business "waiting for a reply" list the review moves out once answered, taking the form with it,
+  // so the confirmation travels as a flash message.
+  await flash(reply ? "Reply posted." : "Reply removed.");
   refresh();
   return success(reply ? "Reply posted." : "Reply removed.");
 }

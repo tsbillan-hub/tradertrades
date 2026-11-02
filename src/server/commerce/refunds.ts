@@ -184,7 +184,7 @@ export async function recordRefund(
     await notify(order.buyerId, {
       type: "refund.processed",
       title: `Refund sent: ${title}`,
-      body: `${money(amountCents, { exact: true })} is on its way back to your card. It usually shows up in 5 to 10 working days.${full ? " Access to the product has ended." : ""}`,
+      body: `${money(amountCents, { exact: true })} is on its way back to your card. It usually shows up in 5 to 10 working days.${full && order.productId ? " Access to the product has ended." : ""}`,
       url: "/settings/billing",
       email: "orders",
     });

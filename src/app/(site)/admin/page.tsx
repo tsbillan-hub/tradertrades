@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, ChevronRight, FileCheck2, Flag, Lightbulb, Package, RotateCcw, ShieldAlert } from "lucide-react";
+import { BadgeCheck, ChevronRight, FileCheck2, Flag, Handshake, KeyRound, Lightbulb, Package, RotateCcw, ShieldAlert } from "lucide-react";
 import { db } from "@/lib/db";
 import { features } from "@/lib/env";
 import { money, plural } from "@/lib/utils";
@@ -43,6 +43,8 @@ export default async function AdminHome() {
     { href: "/admin/verification", icon: <BadgeCheck />, label: "ID and socials", count: n.verification, hint: "Optional badges people asked for" },
     { href: "/admin/suggestions", icon: <Lightbulb />, label: "Suggestions", count: n.suggestions, hint: "Companies people want in the directory" },
     { href: "/admin/proof", icon: <FileCheck2 />, label: "Review proof", count: n.proof, hint: "Proof of use on directory reviews" },
+    { href: "/admin/claims", icon: <KeyRound />, label: "Listing claims", count: n.claims, hint: "Companies proving it's theirs with documents" },
+    { href: "/admin/deals", icon: <Handshake />, label: "Deal disputes", count: n.deals, hint: "A company and a creator disagree on a paid deal" },
   ];
   const waiting = queues.reduce((sum, q) => sum + q.count, 0);
 

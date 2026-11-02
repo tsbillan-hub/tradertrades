@@ -48,7 +48,7 @@ export default function RulesPage() {
           <li>To sell, confirm your email, set up your creator page and agree to these rules. Listings go live as soon as they pass the automatic rules check.</li>
           <li>Breaking these rules can get a listing removed, payouts held and selling switched off for your account.</li>
           <li>You need to be 13 or older to have an account. To get paid out, creators must meet the age rules of our payment partner, Stripe, in their country.</li>
-          <li>Businesses sell through featured spots and creator campaigns, not product listings.</li>
+          <li>Businesses sell through Sponsored spots and creator campaigns, not product listings.</li>
         </ul>
       </Section>
 
@@ -90,15 +90,37 @@ export default function RulesPage() {
         </ul>
       </Section>
 
-      <Section title="6. What happens if rules are broken">
+      <Section id="campaigns" title="6. Brand campaigns">
+        <p>Companies can pay creators to make videos, posts and streams. Creators apply with a price, or companies invite them.</p>
+        <ul>
+          <li>Paid posts must say they&apos;re paid, clearly and up front, using the platform&apos;s paid partnership label where it has one.</li>
+          <li>Campaign briefs follow the honest claims rules above. No asking creators to promise results, show payouts that aren&apos;t theirs, or hide that a post is paid.</li>
+          <li>No campaigns for anything on the never allowed list, like copy trading, account management or challenge passing services.</li>
+          <li>The company pays the creator&apos;s full price, plus our 10%, before any work starts. We hold it until the company approves the work, or until 7 days after the creator sends it if the company says nothing.</li>
+          <li>A company can ask for changes, and the creator can send the work again. If the two sides can&apos;t agree, either can ask our team to step in. We can release the money, refund the company, or ask for one more round.</li>
+          <li>Keep campaign payments on TraderTrades. Deals paid outside it aren&apos;t covered by any of this.</li>
+        </ul>
+      </Section>
+
+      <Section id="jobs" title="7. Jobs board">
+        <ul>
+          <li>Posting a job is free, for creators and companies.</li>
+          <li>A job can never ask people to pay anything to apply or start. No application fees, deposits, starter kits, or &ldquo;buy our course first&rdquo;.</li>
+          <li>Describe the pay honestly. If it&apos;s commission only, say so.</li>
+          <li>No jobs that break these rules, like trading other people&apos;s accounts or passing prop firm challenges for them.</li>
+          <li>Job posts close on their own after 60 days. You can reopen one if you&apos;re still hiring.</li>
+        </ul>
+      </Section>
+
+      <Section title="8. What happens if rules are broken">
         <p>Depending on how serious it is: a warning, a listing taken down, payouts paused, a suspension, or a permanent ban. Buyers who were misled can be refunded from the creator&apos;s balance.</p>
         <p>
           If you think we got something wrong, reply to the email we sent or write to us from the <Link href="/help">help page</Link>. A different person will look at it.
         </p>
       </Section>
 
-      <Section title="7. Report something">
-        <p>Every profile, listing, review and post has a Report button. Reports go to a person, usually within a day.</p>
+      <Section title="9. Report something">
+        <p>Every profile, listing, review, post, campaign and job has a Report button. Reports go to a person, usually within a day.</p>
       </Section>
     </LegalPage>
   );

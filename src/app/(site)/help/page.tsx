@@ -149,8 +149,36 @@ const GROUPS: { id: string; title: string; icon: typeof CreditCard; items: QA[] 
         q: "Our company is listed. How do we take it over?",
         a: (
           <>
-            Open your listing and press &ldquo;Claim this listing&rdquo;. We send a code to an email on your company&apos;s domain. Once confirmed, you can edit details,
-            reply to reviews and post offers. See <Link href="/for-business">TraderTrades for business</Link>.
+            Open your listing and press &ldquo;Claim this listing&rdquo;, or <Link href="/business/claim">find it here</Link>. We send a code to an email on your
+            company&apos;s domain. Once confirmed, you can edit details, reply to reviews, post offers and videos, and add teammates. See{" "}
+            <Link href="/for-business">TraderTrades for business</Link>.
+          </>
+        ),
+      },
+      {
+        q: "We don't have an email at our company's domain.",
+        a: "Choose \u201cSend documents\u201d on the claim page instead, with something that shows you work there (a letter on company paper, or a business registration with your name). Only our team sees it, we usually answer within 2 working days, and we delete the documents once we've decided.",
+      },
+      {
+        q: "How do creator campaigns work?",
+        a: (
+          <>
+            Post a brief from your business dashboard, or invite creators directly. When you agree a price with a creator, you pay it into the deal plus our 10% fee. The
+            creator makes the content and sends you the links. You approve it (or ask for changes), and then they&apos;re paid. If nobody answers within 7 days of the work
+            arriving, it&apos;s approved automatically. Creators can browse open campaigns on the <Link href="/campaigns">campaigns page</Link>.
+          </>
+        ),
+      },
+      {
+        q: "What if a creator doesn't deliver, or we disagree?",
+        a: "The money stays held in the deal until the work is approved. If the creator pulls out, you get it all back, our fee included. If you can't agree, either side can ask our team to step in from the deal page: we look at both sides, then pay the creator, refund you, or let the deal carry on.",
+      },
+      {
+        q: "Can we post jobs?",
+        a: (
+          <>
+            Yes, for free, as yourself or as your company. Editors, clippers, moderators, closers, developers and more are on the <Link href="/jobs">jobs board</Link>. Job
+            posts can&apos;t ask applicants to pay anything, and they close on their own after 60 days.
           </>
         ),
       },
@@ -159,7 +187,7 @@ const GROUPS: { id: string; title: string; icon: typeof CreditCard; items: QA[] 
         a: "No. You can reply publicly, and you can report a review that breaks the community guidelines (for example, it's fake or about a different company). A person checks every report.",
       },
       {
-        q: "How do Featured spots work?",
+        q: "How do Sponsored spots work?",
         a: (
           <>
             You pay a weekly price to appear at the top of a directory category or on the home page, always labelled &ldquo;Sponsored&rdquo;. Prices are on the{" "}

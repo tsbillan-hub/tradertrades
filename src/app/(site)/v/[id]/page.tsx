@@ -47,7 +47,9 @@ export default async function VideoPage({ params }: Props) {
   const { id } = await params;
   const video = await load(id);
   const viewer = await getViewer();
-  const isOwner = Boolean(viewer && video?.author?.id === viewer.id);
+  const onTeam =
+    viewer && video?.companyId ? Boolean(await db.businessMember.findUnique({ where: { companyId_userId: { companyId: video.companyId, userId: viewer.id } }, select: { id: true } })) : false;
+  const isOwner = Boolean(viewer && (video?.author?.id === viewer.id || onTeam));
   if (!video || (video.status !== "PUBLISHED" && !isOwner && !viewer?.isAdmin)) notFound();
 
   // One view per person per half hour.

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgePercent, Banknote, CalendarDays, ExternalLink, Film, LayoutDashboard, Package, Receipt, Settings, Users } from "lucide-react";
+import { BadgePercent, Banknote, CalendarDays, ExternalLink, Film, Handshake, LayoutDashboard, Package, Receipt, Settings, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireCreator } from "@/server/dal";
 import { SideLink } from "@/components/layout/nav-link";
@@ -7,10 +7,12 @@ import { SideLink } from "@/components/layout/nav-link";
 export default async function CreatorDashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await requireCreator();
   const now = new Date();
-  const [openRefunds, upcomingCalls] = await Promise.all([
+  const [openRefunds, upcomingCalls, dealsToDo] = await Promise.all([
     db.refund.count({ where: { order: { sellerId: user.id }, status: "REQUESTED", escalatedAt: null } }),
     // Calls in the next 7 days, so the creator notices them.
     db.booking.count({ where: { mentorId: user.id, status: "CONFIRMED", startsAt: { gt: now, lt: new Date(now.getTime() + 7 * 86_400_000) } } }),
+    // Invites to answer and paid-in work to send.
+    db.deal.count({ where: { creatorId: user.id, status: { in: ["INVITED", "FUNDED"] } } }),
   ]);
   return (
     <div className="container-tt py-6 sm:py-8">
@@ -28,6 +30,7 @@ export default async function CreatorDashboardLayout({ children }: { children: R
           <SideLink href="/creator/calendar" icon={<CalendarDays />} count={upcomingCalls}>Calendar</SideLink>
           <SideLink href="/creator/sales" icon={<Receipt />} count={openRefunds}>Sales</SideLink>
           <SideLink href="/creator/customers" icon={<Users />}>Customers</SideLink>
+          <SideLink href="/creator/campaigns" icon={<Handshake />} count={dealsToDo}>Brand deals</SideLink>
           <SideLink href="/creator/coupons" icon={<BadgePercent />}>Discount codes</SideLink>
           <SideLink href="/creator/payouts" icon={<Banknote />}>Payouts</SideLink>
           <SideLink href="/creator/settings" icon={<Settings />}>Settings</SideLink>

@@ -2,13 +2,15 @@ import "server-only";
 import type { AuthTokenType } from "@/generated/prisma/enums";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { randomInt } from "node:crypto";
 import { randomToken, sha256 } from "@/server/crypto";
 
 const TTL: Record<AuthTokenType, number> = {
   VERIFY_EMAIL: 48 * 3600,
   RESET_PASSWORD: 3600,
   CHANGE_EMAIL: 24 * 3600,
-  VERIFY_WORK_EMAIL: 24 * 3600,
+  // A typed code, so it lives short.
+  VERIFY_WORK_EMAIL: 3600,
 };
 
 export async function issueToken(userId: string, type: AuthTokenType, data?: Prisma.InputJsonValue) {
@@ -30,7 +32,7 @@ export async function issueToken(userId: string, type: AuthTokenType, data?: Pri
 /** Short numeric code variant, for typing into a form (used for work email checks). */
 export async function issueCode(userId: string, type: AuthTokenType, data?: Prisma.InputJsonValue) {
   await db.authToken.deleteMany({ where: { userId, type, usedAt: null } });
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const code = String(randomInt(100000, 1000000));
   await db.authToken.create({
     data: {
       userId,

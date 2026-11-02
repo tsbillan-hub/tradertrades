@@ -56,14 +56,37 @@ export default async function CreatorSettingsPage() {
             </Field>
           </div>
         </Panel>
-        <Panel title="Brand deals">
-          <label className="flex items-start gap-3 text-sm">
-            <input type="checkbox" name="acceptsCampaigns" defaultChecked={c.acceptsCampaigns} className="checkbox mt-0.5" />
-            <span>
-              <span className="font-semibold">Open to campaigns from companies</span>
-              <span className="block text-muted">Prop firms, brokers and tools can invite you to paid campaigns. You always choose what to accept.</span>
-            </span>
-          </label>
+        <Panel
+          id="brand-deals"
+          title="Brand deals"
+          description={
+            <>
+              Companies find you by market and audience size. You can also{" "}
+              <Link href="/campaigns" className="link">
+                browse open campaigns
+              </Link>{" "}
+              and apply.
+            </>
+          }
+        >
+          <div className="space-y-5">
+            <label className="flex items-start gap-3 text-sm">
+              <input type="checkbox" name="acceptsCampaigns" defaultChecked={c.acceptsCampaigns} className="checkbox mt-0.5" />
+              <span>
+                <span className="font-semibold">Open to campaigns from companies</span>
+                <span className="block text-muted">Prop firms, brokers and tools can invite you to paid campaigns. You always choose what to accept.</span>
+              </span>
+            </label>
+            <Field
+              label="Your audience"
+              name="audienceSize"
+              optional
+              className="max-w-xs"
+              hint="Followers across your channels, roughly. Companies see it when they look for creators, so keep it honest."
+            >
+              <Input name="audienceSize" inputMode="numeric" placeholder="For example 25000" defaultValue={c.audienceSize ?? ""} />
+            </Field>
+          </div>
         </Panel>
         <div className="flex items-center justify-between gap-3">
           <Link href="/settings" className="text-sm font-semibold text-muted hover:text-ink">

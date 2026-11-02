@@ -17,11 +17,21 @@ export default async function TestCheckoutPage({ params }: { params: Promise<{ o
   const user = await requireUser();
   const order = await db.order.findUnique({
     where: { id: orderId },
-    include: { product: { include: { creator: { select: { username: true, displayName: true } } } }, price: true },
+    include: { product: { include: { creator: { select: { username: true, displayName: true } } } }, price: true, company: { select: { name: true, slug: true } } },
   });
   if (!order || order.buyerId !== user.id || order.provider !== "TEST" || !env.demoMode) redirect("/library");
   if (order.status !== "PENDING") redirect(`/checkout/success?order=${order.id}`);
-  const back = order.product ? productPath(order.product.creator.username, order.product.slug) : "/marketplace";
+  // Businesses pay for Sponsored spots and campaign deals through the same test card page.
+  const business = order.kind === "FEATURED" || order.kind === "CAMPAIGN";
+  const back =
+    order.kind === "FEATURED" && order.company
+      ? `/business/${order.company.slug}/featured`
+      : order.kind === "CAMPAIGN" && order.dealId
+        ? `/deals/${order.dealId}`
+        : order.product
+          ? productPath(order.product.creator.username, order.product.slug)
+          : "/marketplace";
+  const seller = business ? `Paying as ${order.company?.name ?? "your company"}` : order.product?.creator.displayName;
 
   return (
     <div className="container-tt max-w-md py-10 sm:py-14">
@@ -33,13 +43,22 @@ export default async function TestCheckoutPage({ params }: { params: Promise<{ o
           <span className="num text-xs text-muted">{orderNumber(order.number)}</span>
         </div>
         <div className="p-5 sm:p-6">
-          <div className="text-sm text-muted">{order.product?.creator.displayName}</div>
+          <div className="text-sm text-muted">{seller}</div>
           <div className="mt-0.5 font-semibold">{order.description}</div>
           <div className="num mt-3 text-3xl font-semibold">{money(order.amountCents, { exact: true })}</div>
 
           <Notice tone="warn" className="mt-5" title="Preview mode">
-            This is how paying works before Stripe is connected. No card is charged and no real money moves. Everything after it (access,
-            receipts, fees, the creator&apos;s sales) works for real.
+            {business ? (
+              <>
+                This is how paying works before Stripe is connected. No card is charged and no real money moves. Everything after it (
+                {order.kind === "FEATURED" ? "the spot going live on its week" : "the deal starting, the money held until you approve"}, receipts) works for real.
+              </>
+            ) : (
+              <>
+                This is how paying works before Stripe is connected. No card is charged and no real money moves. Everything after it (access,
+                receipts, fees, the creator&apos;s sales) works for real.
+              </>
+            )}
           </Notice>
 
           <div className="mt-5 space-y-3" aria-hidden>

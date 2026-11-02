@@ -24,7 +24,8 @@ const COLS: { title: string; links: { href: string; label: string }[] }[] = [
       { href: "/fees", label: "Fees" },
       { href: "/rules", label: "Marketplace rules" },
       { href: "/creator", label: "Creator dashboard" },
-      { href: "/jobs", label: "Hire help" },
+      { href: "/campaigns", label: "Paid brand campaigns" },
+      { href: "/jobs", label: "Jobs board" },
     ],
   },
   {
@@ -32,7 +33,7 @@ const COLS: { title: string; links: { href: string; label: string }[] }[] = [
     links: [
       { href: "/for-business", label: "TraderTrades for business" },
       { href: "/business/claim", label: "Claim your listing" },
-      { href: "/for-business#featured", label: "Featured spots" },
+      { href: "/for-business#featured", label: "Sponsored spots" },
       { href: "/for-business#campaigns", label: "Creator campaigns" },
     ],
   },

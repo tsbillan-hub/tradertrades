@@ -73,3 +73,21 @@ export async function requireCompanyMember(companyId: string, roles: MemberRole[
   if (!company) notFound();
   return { user, company, role: member?.role ?? ("OWNER" as MemberRole) };
 }
+
+/** A company's business dashboard, found by its slug. Its team (and our staff) only; anyone else gets a 404. */
+export async function requireBusiness(slug: string, roles: MemberRole[] = ["OWNER", "ADMIN", "MEMBER"]) {
+  const user = await requireVerifiedUser();
+  const company = /^[a-z0-9-]{1,80}$/.test(slug) ? await db.company.findUnique({ where: { slug } }) : null;
+  if (!company) notFound();
+  const member = await db.businessMember.findUnique({ where: { companyId_userId: { companyId: company.id, userId: user.id } } });
+  if (!member && !user.isAdmin) notFound();
+  if (member && !roles.includes(member.role)) redirect(`/business/${company.slug}`);
+  return { user, company, role: (member?.role ?? "OWNER") as MemberRole, staffView: !member };
+}
+
+/** For server actions: the user's role at a company, or null if they aren't on its team. Staff count as owners. */
+export async function companyRole(companyId: string, user: { id: string; isAdmin: boolean }) {
+  const member = await db.businessMember.findUnique({ where: { companyId_userId: { companyId, userId: user.id } }, select: { role: true } });
+  if (member) return member.role;
+  return user.isAdmin ? ("OWNER" as MemberRole) : null;
+}

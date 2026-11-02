@@ -6,6 +6,7 @@ import { ActionForm, Field, FormMessage, Input, Select, SubmitButton, Textarea }
 import { UploadButton } from "@/components/ui/uploader";
 import { saveVideo } from "@/server/actions/videos";
 import { cn, durationLabel } from "@/lib/utils";
+import type { ActionState } from "@/lib/forms";
 
 export type VideoFormData = {
   id: string;
@@ -26,8 +27,23 @@ function shapeOf(width?: number, height?: number) {
   return r < 0.8 ? "Vertical (9:16)" : r < 1.2 ? "Square" : "Wide (16:9)";
 }
 
-/** Post or edit a video: upload a file (any shape, vertical is fine) or paste a YouTube, Vimeo or Loom link. */
-export function VideoForm({ video, products, defaultProductId }: { video: VideoFormData | null; products: { id: string; title: string }[]; defaultProductId?: string }) {
+/**
+ * Post or edit a video: upload a file (any shape, vertical is fine) or paste a YouTube, Vimeo or Loom link.
+ * Creators post to their page (and optionally a product); a company's team posts to its directory listing.
+ */
+export function VideoForm({
+  video,
+  products,
+  defaultProductId,
+  action = saveVideo,
+  companyId,
+}: {
+  video: VideoFormData | null;
+  products: { id: string; title: string }[];
+  defaultProductId?: string;
+  action?: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+  companyId?: string;
+}) {
   const [source, setSource] = useState<"upload" | "link">(video?.embedUrl ? "link" : "upload");
   const [picked, setPicked] = useState<Picked | null>(null);
   const [poster, setPoster] = useState<{ id: string | null; url: string | null }>({ id: null, url: video?.posterUrl ?? null });
@@ -36,7 +52,8 @@ export function VideoForm({ video, products, defaultProductId }: { video: VideoF
   const shownDuration = picked?.durationSec ?? current?.durationSec ?? null;
 
   return (
-    <ActionForm action={saveVideo} toastOnSuccess refreshOnSuccess className="space-y-6">
+    <ActionForm action={action} toastOnSuccess refreshOnSuccess className="space-y-6">
+      {companyId ? <input type="hidden" name="companyId" value={companyId} /> : null}
       {video ? <input type="hidden" name="videoId" value={video.id} /> : null}
       <input type="hidden" name="mediaId" value={source === "upload" ? (picked?.id ?? "") : ""} />
       <input type="hidden" name="posterMediaId" value={poster.id ?? ""} />
@@ -117,22 +134,24 @@ export function VideoForm({ video, products, defaultProductId }: { video: VideoF
       <section className="card space-y-4 p-5">
         <h2 className="text-lg">Details</h2>
         <Field label="Title" name="title">
-          <Input name="title" defaultValue={video?.title ?? ""} maxLength={120} placeholder="How I mark my levels before the open" />
+          <Input name="title" defaultValue={video?.title ?? ""} maxLength={120} placeholder={companyId ? "How our evaluation works, step by step" : "How I mark my levels before the open"} />
         </Field>
         <Field label="Description" name="description" optional hint="Same rules as listings: no profit promises or guaranteed results.">
           <Textarea name="description" rows={4} maxLength={3000} defaultValue={video?.description ?? ""} />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Show it on a product too" name="productId" optional hint="It also appears on that product's page.">
-            <Select name="productId" defaultValue={video?.productId ?? defaultProductId ?? ""}>
-              <option value="">Only on my page</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          {companyId ? null : (
+            <Field label="Show it on a product too" name="productId" optional hint="It also appears on that product's page.">
+              <Select name="productId" defaultValue={video?.productId ?? defaultProductId ?? ""}>
+                <option value="">Only on my page</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
           <Field label="Shape" name="aspect" hint="Auto reads it from the file.">
             <Select name="aspect" defaultValue={video ? video.aspect : "auto"}>
               <option value="auto">Auto</option>

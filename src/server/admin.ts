@@ -152,14 +152,14 @@ export async function targetPreview(type: ReportTarget, id: string): Promise<Tar
       return { exists: true, gone: v.status === "REMOVED", title: v.title, excerpt: v.description ? truncate(v.description, 280) : undefined, href: `/v/${v.id}`, owner: v.author };
     }
     case "JOB": {
-      const j = await db.jobPost.findUnique({ where: { id } });
+      const j = await db.jobPost.findUnique({ where: { id }, include: { poster: { select: ownerSelect } } });
       if (!j) return missing;
-      return { exists: true, gone: j.status !== "OPEN", title: j.title, href: `/jobs/${j.id}` };
+      return { exists: true, gone: j.status === "REMOVED", title: j.title, excerpt: truncate(j.description, 280), href: `/jobs/${j.id}`, owner: j.poster };
     }
     case "CAMPAIGN": {
-      const c = await db.campaign.findUnique({ where: { id } });
+      const c = await db.campaign.findUnique({ where: { id }, include: { createdBy: { select: ownerSelect }, company: { select: { name: true } } } });
       if (!c) return missing;
-      return { exists: true, gone: c.status === "CLOSED", title: c.title };
+      return { exists: true, gone: c.status === "REMOVED", title: `${c.title} (${c.company.name})`, excerpt: truncate(c.brief, 280), href: `/campaigns/${c.id}`, owner: c.createdBy };
     }
   }
 }
@@ -238,18 +238,30 @@ export async function takeDown(type: ReportTarget, id: string, reason: string) {
         db.creatorProfile.updateMany({ where: { pinnedVideoId: id }, data: { pinnedVideoId: null } }),
       ]);
       if (v.authorId) await notify(v.authorId, { type: "video.removed", title: `Our team took down your video "${v.title}"`, body: why, url: "/creator/videos" });
+      if (v.companyId) {
+        const c = await db.company.findUnique({ where: { id: v.companyId }, select: { slug: true, members: { select: { userId: true } } } });
+        for (const m of c?.members ?? []) {
+          await notify(m.userId, { type: "video.removed", title: `Our team took down your company's video "${v.title}"`, body: why, url: `/business/${c!.slug}/videos` });
+        }
+      }
       return true;
     }
     case "JOB": {
       const j = await db.jobPost.findUnique({ where: { id } });
-      if (!j || j.status !== "OPEN") return false;
-      await db.jobPost.update({ where: { id }, data: { status: "CLOSED" } });
+      if (!j || j.status === "REMOVED") return false;
+      await db.jobPost.update({ where: { id }, data: { status: "REMOVED", removedReason: why } });
+      await notify(j.posterId, { type: "job.removed", title: `Our team took down your job post "${j.title}"`, body: why, url: `/jobs/${j.id}`, email: "business" });
       return true;
     }
     case "CAMPAIGN": {
-      const c = await db.campaign.findUnique({ where: { id } });
-      if (!c || c.status === "CLOSED") return false;
-      await db.campaign.update({ where: { id }, data: { status: "CLOSED" } });
+      const c = await db.campaign.findUnique({ where: { id }, include: { company: { select: { slug: true } } } });
+      if (!c || c.status === "REMOVED") return false;
+      // Deals already agreed carry on (the money is held either way); nobody new can apply.
+      await db.campaign.update({ where: { id }, data: { status: "REMOVED", removedReason: why } });
+      const team = await db.businessMember.findMany({ where: { companyId: c.companyId }, select: { userId: true } });
+      for (const m of team) {
+        await notify(m.userId, { type: "campaign.removed", title: `Our team took down your campaign "${c.title}"`, body: why, url: `/business/${c.company.slug}/campaigns/${c.id}`, email: "business" });
+      }
       return true;
     }
   }

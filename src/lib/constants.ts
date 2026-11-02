@@ -8,6 +8,8 @@ import type {
   ExperienceLevel,
   JobRole,
   JobKind,
+  JobStatus,
+  ApplicationStatus,
   ReportReason,
 } from "@/generated/prisma/enums";
 
@@ -274,6 +276,9 @@ export const PLATFORMS = [
 
 export const JOB_ROLES: { value: JobRole; label: string }[] = [
   { value: "VIDEO_EDITOR", label: "Video editor" },
+  { value: "CLIPPER", label: "Clipper" },
+  { value: "APPOINTMENT_SETTER", label: "Appointment setter" },
+  { value: "CLOSER", label: "Closer" },
   { value: "MODERATOR", label: "Moderator" },
   { value: "COMMUNITY_MANAGER", label: "Community manager" },
   { value: "DEVELOPER", label: "Developer" },
@@ -290,6 +295,22 @@ export const JOB_KINDS: { value: JobKind; label: string }[] = [
   { value: "CONTRACT", label: "Contract" },
   { value: "GIG", label: "One off gig" },
 ];
+
+export const jobRoleLabel = (r: JobRole) => JOB_ROLES.find((x) => x.value === r)?.label ?? r;
+export const jobKindLabel = (k: JobKind) => JOB_KINDS.find((x) => x.value === k)?.label ?? k;
+
+export const JOB_STATUS: Record<JobStatus, { label: string; tone: string }> = {
+  OPEN: { label: "Open", tone: "badge-ok" },
+  CLOSED: { label: "Closed", tone: "badge-outline" },
+  REMOVED: { label: "Taken down", tone: "badge-bad" },
+};
+
+export const APPLICATION_STATUS: Record<ApplicationStatus, { label: string; tone: string }> = {
+  NEW: { label: "New", tone: "badge-info" },
+  SHORTLISTED: { label: "Shortlisted", tone: "badge-warn" },
+  HIRED: { label: "Hired", tone: "badge-ok" },
+  REJECTED: { label: "Not this time", tone: "badge-outline" },
+};
 
 export const REPORT_REASONS: { value: ReportReason; label: string }[] = [
   { value: "SCAM", label: "Scam or fraud" },

@@ -104,7 +104,12 @@ export async function cancelPendingOrder(formData: FormData) {
   const user = await requireUser();
   const orderId = String(formData.get("orderId") ?? "");
   const back = String(formData.get("back") ?? "/marketplace");
-  await db.order.updateMany({ where: { id: orderId, buyerId: user.id, status: "PENDING" }, data: { status: "CANCELED" } });
+  const canceled = await db.order.updateMany({ where: { id: orderId, buyerId: user.id, status: "PENDING" }, data: { status: "CANCELED" } });
+  if (canceled.count) {
+    // An unpaid Sponsored spot holds its place for a while; let it go straight away so others can book it.
+    const order = await db.order.findUnique({ where: { id: orderId }, select: { featuredSlotId: true } });
+    if (order?.featuredSlotId) await db.featuredSlot.updateMany({ where: { id: order.featuredSlotId, status: "PENDING_PAYMENT" }, data: { status: "CANCELED" } });
+  }
   redirect(back.startsWith("/") && !back.startsWith("//") ? back : "/marketplace");
 }
 

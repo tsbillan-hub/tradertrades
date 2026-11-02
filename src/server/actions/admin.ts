@@ -6,12 +6,13 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { CATEGORIES, REPORT_REASONS } from "@/lib/constants";
 import { fail, formObject, invalid, optionalText, success, type ActionState } from "@/lib/forms";
-import { orderNumber, slugify } from "@/lib/utils";
+import { money, orderNumber, slugify } from "@/lib/utils";
 import { requireAdmin } from "@/server/dal";
 import { audit } from "@/server/audit";
 import { notify } from "@/server/notify";
 import { TAKEDOWN_LABEL, takeDown } from "@/server/admin";
 import { processRefund } from "@/server/commerce/refunds";
+import { approveClaim, approveDeal, cancelFeaturedSlot, refundDeal, refundFeaturedOrder, rejectClaim } from "@/server/business";
 import { removeMedia } from "@/server/storage";
 import { flash } from "@/server/flash";
 
@@ -273,10 +274,32 @@ export async function refundOrderAsAdmin(_: ActionState, formData: FormData): Pr
   const admin = await requireAdmin();
   const parsed = z.object({ orderId: id, note: z.string().trim().min(3, "Say why").max(500) }).safeParse(formObject(formData));
   if (!parsed.success) return invalid(parsed.error, formData);
-  const order = await db.order.findUnique({ where: { id: parsed.data.orderId } });
+  const order = await db.order.findUnique({ where: { id: parsed.data.orderId }, include: { deal: { select: { id: true, status: true } } } });
   if (!order || (order.status !== "PAID" && order.status !== "PARTIALLY_REFUNDED")) return fail("Only paid orders can be refunded.");
   const left = order.amountCents - order.refundedCents;
   if (left <= 0) return fail("Nothing left to refund.");
+  // Business payments are charged to us, not to a creator, so they have their own refund paths.
+  if (order.kind === "CAMPAIGN") {
+    if (!order.deal || (order.deal.status !== "FUNDED" && order.deal.status !== "SUBMITTED")) {
+      return fail("The creator was already paid for this deal, so it can't be refunded from here.");
+    }
+    try {
+      const ok = await refundDeal(order.deal.id, admin.id, parsed.data.note, "staff");
+      if (!ok) return fail("This deal was already handled.");
+    } catch (err) {
+      return fail(err instanceof Error ? err.message : "The refund didn't go through. Try again.");
+    }
+    return done("Refunded in full. The deal is canceled and both sides have been told.");
+  }
+  if (order.kind === "FEATURED") {
+    try {
+      const r = await refundFeaturedOrder(order.id, admin.id, parsed.data.note);
+      if (!r) return fail("This order was already handled.");
+    } catch (err) {
+      return fail(err instanceof Error ? err.message : "The refund didn't go through. Try again.");
+    }
+    return done("Refunded in full. The Sponsored spot has ended and the company has been told.");
+  }
   const open = await db.refund.findFirst({ where: { orderId: order.id, status: "REQUESTED" } });
   const refund =
     open ??
@@ -473,4 +496,81 @@ export async function deleteOffer(formData: FormData) {
   await audit(admin.id, "offer.delete", { type: "company", id: offer.companyId });
   await flash("Offer deleted.");
   refresh();
+}
+
+// ───────────────────────────── Business: claims, deals, Sponsored spots ─────────────────────────────
+
+/** A claim sent with documents: let them run the listing, or say no with a reason they'll see. */
+export async function decideClaim(_: ActionState, formData: FormData): Promise<ActionState> {
+  const admin = await requireAdmin();
+  const parsed = z.object({ claimId: id, decision: z.enum(["approve", "reject"]), note: note(800) }).safeParse(formObject(formData));
+  if (!parsed.success) return invalid(parsed.error, formData);
+  const claim = await db.companyClaim.findUnique({ where: { id: parsed.data.claimId } });
+  if (!claim || claim.status !== "PENDING") return fail("Someone already handled this.");
+  if (parsed.data.decision === "reject") {
+    if (!parsed.data.note) return fail("Say why, so they know what to send next time.", formData, { note: ["Add a reason"] });
+    await rejectClaim(claim.id, admin.id, parsed.data.note);
+  } else {
+    const res = await approveClaim(claim.id, admin.id, "staff");
+    if (!res) return fail("Someone already handled this.");
+  }
+  // The documents were only needed for this check.
+  await db.companyClaim.update({ where: { id: claim.id }, data: { documentIds: [] } });
+  for (const m of claim.documentIds) await removeMedia(m).catch(() => undefined);
+  return done(parsed.data.decision === "approve" ? "Approved. They run the listing now." : "Turned down. They've been told why.");
+}
+
+/** A disagreement on a deal: pay the creator, give the company its money back, or let the deal carry on. */
+export async function resolveDealDispute(_: ActionState, formData: FormData): Promise<ActionState> {
+  const admin = await requireAdmin();
+  const parsed = z
+    .object({ dealId: id, decision: z.enum(["pay", "refund", "continue"]), note: z.string().trim().min(10, "Explain the decision. Both sides see it.").max(1000) })
+    .safeParse(formObject(formData));
+  if (!parsed.success) return invalid(parsed.error, formData);
+  const d = parsed.data;
+  const deal = await db.deal.findUnique({ where: { id: d.dealId }, include: { campaign: true, company: true } });
+  if (!deal || !deal.disputedAt || deal.resolvedAt) return fail("Someone already handled this.");
+  if (deal.status !== "FUNDED" && deal.status !== "SUBMITTED") return fail("This deal already ended.");
+  if (d.decision === "pay") {
+    const ok = await approveDeal(deal.id, admin.id, "staff", d.note);
+    if (!ok) return fail("The payment for this deal couldn't be found. Check the order first.");
+    return done("Decided: the creator gets paid. Both sides have been told.");
+  }
+  if (d.decision === "refund") {
+    try {
+      const ok = await refundDeal(deal.id, admin.id, d.note, "staff");
+      if (!ok) return fail("This deal was already handled.");
+    } catch (err) {
+      return fail(err instanceof Error ? err.message : "The refund didn't go through. Try again.");
+    }
+    return done("Decided: the company gets its money back. Both sides have been told.");
+  }
+  // Carry on: the deal stays as it is. Work already sent gets a fresh week for the company to answer.
+  const now = new Date();
+  await db.deal.update({
+    where: { id: deal.id },
+    data: { resolvedAt: now, resolvedById: admin.id, resolutionNote: d.note, ...(deal.status === "SUBMITTED" ? { submittedAt: now } : {}) },
+  });
+  await audit(admin.id, "deal.dispute_closed", { type: "deal", id: deal.id });
+  const team = await db.businessMember.findMany({ where: { companyId: deal.companyId }, select: { userId: true } });
+  for (const uid of [deal.creatorId, ...team.map((m) => m.userId)]) {
+    await notify(uid, { type: "deal.dispute_closed", title: `Our team looked at "${deal.campaign.title}"`, body: `The deal carries on. ${d.note}`, url: `/deals/${deal.id}`, email: "business" });
+  }
+  return done("Closed. The deal carries on and both sides have been told.");
+}
+
+/** Ends a Sponsored spot early, with or without a refund for the days not used. */
+export async function cancelFeatured(_: ActionState, formData: FormData): Promise<ActionState> {
+  const admin = await requireAdmin();
+  const parsed = z
+    .object({ slotId: id, reason: z.string().trim().min(5, "Tell the company why, in a sentence").max(800), refund: z.string().optional() })
+    .safeParse(formObject(formData));
+  if (!parsed.success) return invalid(parsed.error, formData);
+  try {
+    const r = await cancelFeaturedSlot(parsed.data.slotId, admin.id, parsed.data.reason, parsed.data.refund === "on");
+    if (!r) return fail("This spot already ended.");
+    return done(r.refunded ? `Ended. ${money(r.refunded, { exact: true })} is going back to the company.` : "Ended. The company has been told.");
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : "The refund didn't go through. Try again.");
+  }
 }

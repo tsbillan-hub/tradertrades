@@ -19,7 +19,7 @@ export function CompanyReplyButton({ reviewId, companyName, reply }: { reviewId:
       className="btn-sm"
     >
       {(close) => (
-        <ActionForm action={replyToCompanyReview} className="space-y-3" toastOnSuccess onSuccess={close}>
+        <ActionForm action={replyToCompanyReview} className="space-y-3" onSuccess={close}>
           <input type="hidden" name="reviewId" value={reviewId} />
           <Field label={`Reply as ${companyName}`} name="reply" hint="Shown publicly under the review. Leave it empty to remove your reply.">
             <Textarea name="reply" rows={4} defaultValue={reply ?? ""} maxLength={2000} />

@@ -15,7 +15,7 @@ export const FEE_LABEL: Record<FeeType, string> = {
   MARKETPLACE_FIRST: "Found by TraderTrades, first purchase (30%)",
   MARKETPLACE_REPEAT: "Found by TraderTrades, repeat purchase (5%)",
   CAMPAIGN: "Campaign deal (10%)",
-  FEATURED: "Featured spot",
+  FEATURED: "Sponsored spot",
   NONE: "No fee",
 };
 
@@ -24,7 +24,7 @@ export const FEE_SHORT: Record<FeeType, string> = {
   MARKETPLACE_FIRST: "Found by us · 1st",
   MARKETPLACE_REPEAT: "Found by us · repeat",
   CAMPAIGN: "Campaign",
-  FEATURED: "Featured",
+  FEATURED: "Sponsored",
   NONE: "None",
 };
 

@@ -63,7 +63,7 @@ export default function FeesPage() {
       <Section title="For businesses">
         <ul>
           <li>Your directory listing is free. Claim it to edit details, reply to reviews and post offers.</li>
-          <li>Featured spots are labelled &ldquo;Sponsored&rdquo;: {money(FEATURED_PRICES.CATEGORY)} a week for the top of a directory category, {money(FEATURED_PRICES.HOME)} a week on the home page.</li>
+          <li>Sponsored spots are clearly labelled &ldquo;Sponsored&rdquo;: {money(FEATURED_PRICES.CATEGORY)} a week for the top of a directory category, {money(FEATURED_PRICES.HOME)} a week on the home page.</li>
           <li>Creator campaigns: you pay the agreed price plus a 10% platform fee. The creator gets the agreed price, minus card processing.</li>
           <li>Job posts are free.</li>
         </ul>

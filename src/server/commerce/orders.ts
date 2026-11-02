@@ -10,6 +10,7 @@ import { sendEmail } from "@/server/email/send";
 import { notify } from "@/server/notify";
 import { audit } from "@/server/audit";
 import { attributionFor } from "@/server/commerce/attribution";
+import { completeBusinessOrder } from "@/server/business";
 
 export const MIN_CHARGE_CENTS = 50;
 
@@ -146,6 +147,12 @@ export async function completeOrder(orderId: string, info: CompleteInfo = {}) {
     },
   });
   if (claimed.count === 0) return order;
+
+  // Sponsored spots and campaign deals have their own follow up (no product, no seller balance yet).
+  if (order.kind === "FEATURED" || order.kind === "CAMPAIGN") {
+    await completeBusinessOrder(order.id);
+    return order;
+  }
 
   const product = order.product;
   const price = order.price;

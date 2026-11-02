@@ -451,6 +451,12 @@ const creatorSettingsSchema = z.object({
     .transform((v) => (v ? Number(v) : null))
     .pipe(z.number().int().min(0).max(60).nullable()),
   acceptsCampaigns: checkbox,
+  audienceSize: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? Number(v.replace(/[,\s]/g, "")) : null))
+    .pipe(z.number({ error: "Enter a number" }).int("Enter a whole number").min(0).max(1_000_000_000, "Check the number").nullable()),
   pinnedVideoId: z.string().trim().optional().default(""),
 });
 
@@ -468,7 +474,7 @@ export async function saveCreatorSettings(_: ActionState, formData: FormData): P
   }
   await db.creatorProfile.update({
     where: { userId: user.id },
-    data: { headline: d.headline, markets: d.markets, tradingStyle: d.tradingStyle ?? null, yearsTrading: d.yearsTrading, acceptsCampaigns: d.acceptsCampaigns, pinnedVideoId },
+    data: { headline: d.headline, markets: d.markets, tradingStyle: d.tradingStyle ?? null, yearsTrading: d.yearsTrading, acceptsCampaigns: d.acceptsCampaigns, audienceSize: d.audienceSize, pinnedVideoId },
   });
   refresh();
   return success("Saved.");

@@ -1,15 +1,18 @@
 "use client";
 
 import type { MouseEvent } from "react";
-import { Ban, Check, CircleCheck, Link2, Plus, RotateCcw, X } from "lucide-react";
+import { Ban, Check, CircleCheck, Handshake, Link2, Plus, RotateCcw, Square, X } from "lucide-react";
 import { ActionForm, Field, FormMessage, Input, Select, SubmitButton, Textarea } from "@/components/ui/form";
 import { ModalButton } from "@/components/ui/client";
 import {
+  cancelFeatured,
+  decideClaim,
   decideDispute,
   decideProof,
   decideSuggestion,
   decideVerification,
   refundOrderAsAdmin,
+  resolveDealDispute,
   resolveFlag,
   resolveReport,
   saveCompany,
@@ -175,20 +178,90 @@ export function DisputeDecisionForm({ refundId, amount }: { refundId: string; am
   );
 }
 
-export function AdminRefundButton({ orderId, left, label }: { orderId: string; left: string; label: string }) {
+const REFUND_EXPLAINER: Record<string, (left: string) => string> = {
+  CAMPAIGN: (left) => `This gives the company the ${left} it paid into the deal, our fee included, and cancels the deal. The creator isn't paid.`,
+  FEATURED: (left) => `This gives the company the ${left} that's left and ends the Sponsored spot now.`,
+};
+
+export function AdminRefundButton({ orderId, left, label, kind = "PURCHASE" }: { orderId: string; left: string; label: string; kind?: string }) {
+  const explain = REFUND_EXPLAINER[kind]?.(left) ?? `This refunds the ${left} that's left on the order to the buyer's card and takes away their access. The creator's share comes out of their balance.`;
   return (
     <ModalButton label={<><RotateCcw /> Refund</>} title={`Refund ${label}`} className="btn-sm">
       <ActionForm action={refundOrderAsAdmin} className="space-y-4">
         <input type="hidden" name="orderId" value={orderId} />
-        <p className="text-sm text-ink-2">
-          This refunds the {left} that&apos;s left on the order to the buyer&apos;s card and takes away their access. The creator&apos;s share comes out of their balance.
-        </p>
-        <Field name="note" label="Why" hint="The buyer and the creator see this.">
+        <p className="text-sm text-ink-2">{explain}</p>
+        <Field name="note" label="Why" hint={kind === "FEATURED" ? "The company sees this." : "Both sides see this."}>
           <Textarea rows={3} maxLength={500} />
         </Field>
         <FormMessage hideSuccess />
         <SubmitButton variant="danger" pendingText="Refunding">
           <RotateCcw /> Refund {left}
+        </SubmitButton>
+      </ActionForm>
+    </ModalButton>
+  );
+}
+
+// ───────────────────────────── Business ─────────────────────────────
+
+export function ClaimDecisionForm({ claimId, company }: { claimId: string; company: string }) {
+  return (
+    <ActionForm action={decideClaim} className="space-y-3">
+      <input type="hidden" name="claimId" value={claimId} />
+      <Field name="note" label="Reason, if you turn it down" hint="They see this, so say what would prove it.">
+        <Textarea rows={3} maxLength={800} placeholder="For example: the letter doesn't show your name, or it's for a different company" />
+      </Field>
+      <FormMessage hideSuccess />
+      <div className="flex flex-wrap gap-2">
+        <SubmitButton name="decision" value="approve" variant="primary" size="sm" onClick={confirmFirst(`Let them run ${company}'s listing?`)}>
+          <Check /> Approve
+        </SubmitButton>
+        <SubmitButton name="decision" value="reject" variant="secondary" size="sm">
+          <X /> Turn down
+        </SubmitButton>
+      </div>
+    </ActionForm>
+  );
+}
+
+export function DealDisputeForm({ dealId, price, total }: { dealId: string; price: string; total: string }) {
+  return (
+    <ActionForm action={resolveDealDispute} className="space-y-3">
+      <input type="hidden" name="dealId" value={dealId} />
+      <Field name="note" label="Your decision, in a sentence or two" hint="The company and the creator both see this.">
+        <Textarea rows={3} maxLength={1000} />
+      </Field>
+      <FormMessage hideSuccess />
+      <div className="flex flex-wrap gap-2">
+        <SubmitButton name="decision" value="pay" variant="primary" size="sm" onClick={confirmFirst(`Pay the creator ${price}? This can't be undone.`)}>
+          <Handshake /> Pay the creator
+        </SubmitButton>
+        <SubmitButton name="decision" value="refund" variant="secondary" size="sm" onClick={confirmFirst(`Give the company back ${total}? The deal ends.`)}>
+          <RotateCcw /> Refund the company
+        </SubmitButton>
+        <SubmitButton name="decision" value="continue" variant="ghost" size="sm">
+          Let it carry on
+        </SubmitButton>
+      </div>
+    </ActionForm>
+  );
+}
+
+export function CancelFeaturedButton({ slotId, company }: { slotId: string; company: string }) {
+  return (
+    <ModalButton label={<><Square /> End early</>} title={`End ${company}'s Sponsored spot`} className="btn-sm" variant="ghost">
+      <ActionForm action={cancelFeatured} className="space-y-4">
+        <input type="hidden" name="slotId" value={slotId} />
+        <p className="text-sm text-ink-2">The spot stops showing straight away. With a refund, the company gets back the days it hasn&apos;t had yet.</p>
+        <Field name="reason" label="Why" hint="The company sees this.">
+          <Textarea rows={3} maxLength={800} />
+        </Field>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="refund" defaultChecked className="checkbox" /> Refund the unused days
+        </label>
+        <FormMessage hideSuccess />
+        <SubmitButton variant="danger" pendingText="Ending it">
+          <Square /> End the spot
         </SubmitButton>
       </ActionForm>
     </ModalButton>

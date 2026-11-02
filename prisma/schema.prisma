@@ -374,6 +374,7 @@ enum CampaignStatus {
   OPEN
   CLOSED
   COMPLETED
+  REMOVED
 }
 
 enum DealStatus {
@@ -410,6 +411,9 @@ enum JobKind {
 
 enum JobRole {
   VIDEO_EDITOR
+  CLIPPER
+  APPOINTMENT_SETTER
+  CLOSER
   MODERATOR
   COMMUNITY_MANAGER
   DEVELOPER
@@ -423,6 +427,7 @@ enum JobRole {
 enum JobStatus {
   OPEN
   CLOSED
+  REMOVED
 }
 
 enum ApplicationStatus {
@@ -1591,6 +1596,7 @@ model Campaign {
   creatorsWanted Int              @default(1)
   minAudience    Int?
   deadline       DateTime?
+  removedReason  String?
   status         CampaignStatus   @default(DRAFT)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -1620,34 +1626,43 @@ model Deal {
   approvedAt     DateTime?
   paidAt         DateTime?
   canceledAt     DateTime?
+  changesNote    String?
+  disputedAt     DateTime?
+  disputedById   String?
+  disputeNote    String?
+  resolvedById   String?
+  resolvedAt     DateTime?
+  resolutionNote String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
   orders         Order[]
 
   @@unique([campaignId, creatorId])
   @@index([creatorId, status])
+  @@index([disputedAt])
 }
 
 model JobPost {
-  id           String           @id @default(cuid())
-  posterId     String
-  poster       User             @relation(fields: [posterId], references: [id], onDelete: Cascade)
-  companyId    String?
-  company      Company?         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  title        String
-  role         JobRole
-  kind         JobKind
-  description  String
-  pay          String?
-  remote       Boolean          @default(true)
-  location     String?
-  applyUrl     String?
-  status       JobStatus        @default(OPEN)
-  isSample     Boolean          @default(false)
-  expiresAt    DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  applications JobApplication[]
+  id            String           @id @default(cuid())
+  posterId      String
+  poster        User             @relation(fields: [posterId], references: [id], onDelete: Cascade)
+  companyId     String?
+  company       Company?         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title         String
+  role          JobRole
+  kind          JobKind
+  description   String
+  pay           String?
+  remote        Boolean          @default(true)
+  location      String?
+  applyUrl      String?
+  status        JobStatus        @default(OPEN)
+  isSample      Boolean          @default(false)
+  expiresAt     DateTime?
+  removedReason String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  applications  JobApplication[]
 
   @@index([status, createdAt])
 }
