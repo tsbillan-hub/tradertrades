@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BookOpen, CalendarPlus, CheckCircle2, Circle, Download, Eye, FileDown, LineChart, PlayCircle, Settings2, Ticket, Video } from "lucide-react";
+import { BookOpen, CalendarDays, CalendarPlus, CheckCircle2, Circle, Download, Eye, FileDown, LineChart, PlayCircle, Settings2, Ticket, Video } from "lucide-react";
 import { db } from "@/lib/db";
 import { loadInside, requireInside, type InsideCtx } from "@/server/inside";
 import { requestIndicatorAccess } from "@/server/actions/content";
@@ -11,11 +11,15 @@ import { ActionForm, Field, FormMessage, Input, SubmitButton } from "@/component
 import { EmptyState, Notice } from "@/components/ui/misc";
 import { Markdown } from "@/components/ui/markdown";
 import { VideoPlayer } from "@/components/video/player";
-import { formatWhen } from "@/lib/time";
-import { insidePath } from "@/lib/paths";
+import { SlotPicker } from "@/components/bookings/slot-picker";
+import { BookForm } from "@/components/bookings/forms";
+import { CallList, CallRow } from "@/components/bookings/call-row";
+import { CHANGE_CUTOFF_HOURS, JOIN_EARLY_MIN, openSlots } from "@/server/bookings";
+import { formatClock, formatDay, formatTime, formatWhen } from "@/lib/time";
+import { insidePath, productPath } from "@/lib/paths";
 import { cn, durationLabel, formatDate, minutesLabel, msSince, plural, toEmbedUrl } from "@/lib/utils";
 
-type Props = { params: Promise<{ username: string; slug: string }> };
+type Props = { params: Promise<{ username: string; slug: string }>; searchParams: Promise<{ day?: string; slot?: string }> };
 type Ctx = InsideCtx & { viewer: NonNullable<InsideCtx["viewer"]> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -236,24 +240,172 @@ async function IndicatorHome({ ctx }: { ctx: Ctx }) {
   );
 }
 
-async function MentoringHome({ ctx }: { ctx: Ctx }) {
-  const { product, entitlement } = ctx;
+async function MentoringHome({ ctx, day, slot }: { ctx: Ctx; day?: string; slot?: string }) {
+  const { product, entitlement, settings, viewer } = ctx;
+  const tz = ctx.timeZone;
+  const mentor = product.creator;
+  const firstName = mentor.displayName.split(" ")[0];
+  const now = new Date();
+  const base = insidePath(mentor.username, product.slug);
+  const callSelect = { product: { select: { title: true } }, buyer: { select: { displayName: true, avatarUrl: true } }, mentor: { select: { displayName: true, avatarUrl: true } } } as const;
+
+  if (ctx.isOwner) {
+    const [upcoming, rulesCount, open] = await Promise.all([
+      db.booking.findMany({ where: { productId: product.id, status: "CONFIRMED", endsAt: { gt: now } }, orderBy: { startsAt: "asc" }, take: 20, include: callSelect }),
+      db.availabilityRule.count({ where: { userId: product.creatorId } }),
+      openSlots({ mentorId: product.creatorId, settings, now }),
+    ]);
+    return (
+      <>
+        <InsideHeader
+          icon={<Video />}
+          title={product.title}
+          description={`${minutesLabel(settings.durationMin)} calls, 1 to 1 with you`}
+          actions={
+            <Link href="/creator/calendar" className="btn btn-secondary btn-sm">
+              <CalendarDays /> Calendar
+            </Link>
+          }
+        />
+        {!rulesCount ? (
+          <Notice
+            tone="warn"
+            title="Buyers can't book yet"
+            action={
+              <Link href="/creator/calendar" className="btn btn-secondary btn-sm">
+                Set weekly hours
+              </Link>
+            }
+          >
+            Add the times you&apos;re free each week. Buyers pick from open times inside those hours.
+          </Notice>
+        ) : (
+          <Notice tone="plain">
+            Buyers book from your open times here.{" "}
+            {open.slots[0] ? (
+              <>
+                Next open time: <span className="font-semibold">{formatWhen(open.slots[0].start, tz)}</span>.
+              </>
+            ) : (
+              "You have no open times right now. Check your weekly hours and time off."
+            )}
+          </Notice>
+        )}
+        <section className="mt-6">
+          <h2 className="text-lg">Calls coming up</h2>
+          {upcoming.length ? (
+            <div className="mt-3">
+              <CallList label="Calls coming up">
+                {upcoming.map((b) => (
+                  <CallRow key={b.id} call={{ ...b, other: b.buyer }} timeZone={tz} now={now} />
+                ))}
+              </CallList>
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-muted">Nobody has booked yet. You get an email when someone does.</p>
+          )}
+        </section>
+      </>
+    );
+  }
+
   const left = entitlement ? Math.max(0, (entitlement.sessionsTotal ?? 0) - entitlement.sessionsUsed) : 0;
+  const [mine, past, open] = await Promise.all([
+    db.booking.findMany({ where: { productId: product.id, buyerId: viewer.id, status: "CONFIRMED", endsAt: { gt: now } }, orderBy: { startsAt: "asc" }, include: callSelect }),
+    db.booking.findMany({
+      where: { productId: product.id, buyerId: viewer.id, OR: [{ status: { not: "CONFIRMED" } }, { endsAt: { lte: now } }] },
+      orderBy: { startsAt: "desc" },
+      take: 5,
+      include: callSelect,
+    }),
+    left > 0 ? openSlots({ mentorId: product.creatorId, settings, now }) : Promise.resolve(null),
+  ]);
+
   return (
     <>
-      <InsideHeader icon={<Video />} title={product.title} description={`1 to 1 with ${product.creator.displayName}`} />
-      {ctx.isOwner ? (
-        <Notice tone="plain">Your buyers see how many calls they have left here, and message you to set up a time.</Notice>
-      ) : (
+      <InsideHeader icon={<Video />} title={product.title} description={`${minutesLabel(settings.durationMin)} calls, 1 to 1 with ${mentor.displayName}`} />
+      <div className="grid gap-3 sm:grid-cols-2">
         <div className="card p-5">
-          <div className="text-sm text-muted">Calls left</div>
+          <div className="text-sm text-muted">Calls left to book</div>
           <div className="num mt-1 text-3xl font-semibold">{left}</div>
-          <p className="mt-3 text-sm text-ink-2">Send {product.creator.displayName} a message with a few times that suit you, and they&apos;ll send the call link.</p>
-          <div className="mt-4">
-            <MessageButton toId={product.creatorId} toName={product.creator.displayName} subject={`Booking a call: ${product.title}`} label="Message to book" variant="primary" />
-          </div>
+          {left === 0 ? (
+            <Link href={`${productPath(mentor.username, product.slug)}#buy`} className="btn btn-secondary btn-sm mt-3">
+              Buy more calls
+            </Link>
+          ) : null}
         </div>
+        <div className="card p-5 text-sm text-ink-2">
+          <div className="font-semibold text-ink">How it works</div>
+          <ul className="mt-2 space-y-1.5">
+            <li>Pick a time and you both get an email with the details.</li>
+            <li>Move or cancel up to {CHANGE_CUTOFF_HOURS} hours before. Canceled calls go back into your account.</li>
+            <li>Join from the call page, up to {JOIN_EARLY_MIN} minutes before it starts.</li>
+          </ul>
+        </div>
+      </div>
+
+      {mine.length ? (
+        <section className="mt-6">
+          <h2 className="text-lg">Your calls</h2>
+          <div className="mt-3">
+            <CallList label="Your calls">
+              {mine.map((b) => (
+                <CallRow key={b.id} call={{ ...b, other: b.mentor }} timeZone={tz} now={now} />
+              ))}
+            </CallList>
+          </div>
+        </section>
+      ) : null}
+
+      {open ? (
+        <section className="mt-8">
+          <SlotPicker
+            slots={open.slots}
+            timeZone={tz}
+            path={base}
+            day={day}
+            slot={slot}
+            empty={
+              <>
+                <p>{mentor.displayName} has no open times right now. Check back soon, or message them to find a time.</p>
+                <div className="mt-3">
+                  <MessageButton toId={product.creatorId} toName={mentor.displayName} subject={`Booking a call: ${product.title}`} variant="secondary" className="btn-sm" />
+                </div>
+              </>
+            }
+            confirm={(picked) => (
+              <BookForm
+                productId={product.id}
+                startsAt={picked.start.toISOString()}
+                summary={`${formatDay(picked.start, tz)} · ${formatClock(picked.start, tz)} to ${formatTime(picked.end, tz)}`}
+                mentorFirstName={firstName}
+              />
+            )}
+          />
+        </section>
+      ) : (
+        <Notice tone="plain" className="mt-6" title="You've booked all your calls">
+          Buy more calls from the listing whenever you want another one.
+        </Notice>
       )}
+
+      {past.length ? (
+        <section className="mt-8">
+          <h2 className="text-lg">Past and canceled</h2>
+          <div className="mt-3">
+            <CallList label="Past and canceled calls">
+              {past.map((b) => (
+                <CallRow key={b.id} call={{ ...b, other: b.mentor }} timeZone={tz} now={now} />
+              ))}
+            </CallList>
+          </div>
+        </section>
+      ) : null}
+
+      <div className="mt-8 flex items-center gap-3 text-sm text-muted">
+        Something to ask before your call?
+        <MessageButton toId={product.creatorId} toName={mentor.displayName} subject={`About my call: ${product.title}`} variant="ghost" className="btn-sm" />
+      </div>
     </>
   );
 }
@@ -321,8 +473,8 @@ function EventHome({ ctx }: { ctx: Ctx }) {
   );
 }
 
-export default async function InsideHome({ params }: Props) {
-  const { username, slug } = await params;
+export default async function InsideHome({ params, searchParams }: Props) {
+  const [{ username, slug }, { day, slot }] = await Promise.all([params, searchParams]);
   const ctx = await requireInside(username, slug);
   const { product } = ctx;
   const base = insidePath(product.creator.username, product.slug);
@@ -344,7 +496,7 @@ export default async function InsideHome({ params }: Props) {
       ) : product.type === "INDICATOR" ? (
         <IndicatorHome ctx={ctx} />
       ) : product.type === "MENTORING" ? (
-        <MentoringHome ctx={ctx} />
+        <MentoringHome ctx={ctx} day={day} slot={slot} />
       ) : product.type === "EVENT" ? (
         <EventHome ctx={ctx} />
       ) : (

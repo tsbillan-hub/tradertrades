@@ -28,7 +28,10 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const theme = (await cookies()).get("tt_theme")?.value;
+  const jar = await cookies();
+  const theme = jar.get("tt_theme")?.value;
+  // Passed down so a toast set by a server action shows even when the page refreshes in place.
+  const flash = jar.get("tt_flash")?.value ?? null;
   const dataTheme = theme === "light" || theme === "dark" ? theme : undefined;
   const viewer = await getViewer();
   return (
@@ -37,7 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <UploadConfig blob={features.blob} userId={viewer?.id ?? null}>
           {children}
         </UploadConfig>
-        <Toaster />
+        <Toaster flash={flash} />
       </body>
     </html>
   );

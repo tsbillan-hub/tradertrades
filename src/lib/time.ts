@@ -124,3 +124,31 @@ export function icsEvent(e: { uid: string; title: string; description?: string; 
   ].filter(Boolean);
   return lines.join("\r\n") + "\r\n";
 }
+
+/** "Eastern Time" style name of a time zone, for "Times shown in ..." notes. */
+export function zoneName(timeZone: string) {
+  const tz = isValidTimeZone(timeZone) ? timeZone : "UTC";
+  try {
+    const part = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "longGeneric" }).formatToParts(new Date(0)).find((p) => p.type === "timeZoneName");
+    return part?.value ?? tz;
+  } catch {
+    return tz.replace(/_/g, " ");
+  }
+}
+
+/** "Thu" and "Nov 5" for a calendar date string, without time zone surprises. */
+export function dateParts(date: string) {
+  const [y, m, d] = date.split("-").map(Number);
+  const at = new Date(Date.UTC(y, m - 1, d, 12));
+  return {
+    weekday: at.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }),
+    monthDay: at.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }),
+    long: at.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" }),
+  };
+}
+
+/** "9:30 AM" in the given time zone, without the zone name. */
+export function formatClock(at: Date, timeZone: string) {
+  const tz = isValidTimeZone(timeZone) ? timeZone : "UTC";
+  return at.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: tz });
+}

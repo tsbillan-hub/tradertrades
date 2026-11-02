@@ -23,6 +23,7 @@ import { insidePath } from "@/lib/paths";
 import { formatWhen, zonedToUtc } from "@/lib/time";
 import { slugify, toEmbedUrl } from "@/lib/utils";
 import { randomToken } from "@/server/crypto";
+import { cancelFutureBookings } from "@/server/bookings";
 
 /** The product, if the signed in person may manage it (its creator or an admin). */
 async function manage(productId: string) {
@@ -581,6 +582,7 @@ export async function removeMember(formData: FormData) {
       }
     }
   }
+  if (ctx.product.type === "MENTORING") await cancelFutureBookings(userId, productId, "This call was canceled because the buyer no longer has access.");
   await audit(ctx.viewer.id, "member.remove", { type: "user", id: userId }, { productId });
   await notify(userId, {
     type: "community.removed",

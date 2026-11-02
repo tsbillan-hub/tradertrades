@@ -1,15 +1,17 @@
 import { db } from "@/lib/db";
 import { absoluteUrl } from "@/lib/env";
 import { accessById } from "@/server/inside";
+import { getViewer } from "@/server/dal";
 import { productSettings } from "@/lib/product-settings";
 import { insidePath } from "@/lib/paths";
 import { icsEvent } from "@/lib/time";
 
-/** A calendar file for a live session (?session=) or an event product (?event=), for people with access. */
+/** A calendar file for a live session (?session=), an event product (?event=) or a booked call (?booking=), for people with access. */
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const sessionId = url.searchParams.get("session");
   const eventId = url.searchParams.get("event");
+  const bookingId = url.searchParams.get("booking");
 
   let file: string | null = null;
   let name = "session";
@@ -40,8 +42,28 @@ export async function GET(request: Request) {
       url: page,
     });
     name = ctx.product.title;
+  } else if (bookingId) {
+    const viewer = await getViewer();
+    const b = viewer
+      ? await db.booking.findUnique({
+          where: { id: bookingId },
+          include: { product: { select: { title: true } }, mentor: { select: { displayName: true } }, buyer: { select: { displayName: true } } },
+        })
+      : null;
+    if (!viewer || !b || (b.mentorId !== viewer.id && b.buyerId !== viewer.id) || b.status !== "CONFIRMED") return new Response("Not found", { status: 404 });
+    const other = b.mentorId === viewer.id ? b.buyer.displayName : b.mentor.displayName;
+    const page = absoluteUrl(`/calls/${b.id}`);
+    file = icsEvent({
+      uid: b.id,
+      title: `Call with ${other} (${b.product.title})`,
+      description: `Join from ${page}`,
+      start: b.startsAt,
+      minutes: Math.round((b.endsAt.getTime() - b.startsAt.getTime()) / 60_000),
+      url: page,
+    });
+    name = `Call with ${other}`;
   }
-  if (!file) return new Response("Missing session or event", { status: 400 });
+  if (!file) return new Response("Missing session, event or booking", { status: 400 });
   const safe = name.replace(/[^\w -]+/g, "").trim().slice(0, 60) || "event";
   return new Response(file, {
     headers: {

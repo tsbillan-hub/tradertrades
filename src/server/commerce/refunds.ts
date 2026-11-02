@@ -5,6 +5,7 @@ import { formatDate, money, orderNumber } from "@/lib/utils";
 import { notify } from "@/server/notify";
 import { audit } from "@/server/audit";
 import { paymentIntentFor, refundPayment, stripe } from "@/server/stripe";
+import { cancelFutureBookings } from "@/server/bookings";
 
 /** Creators have this long to answer a refund request before our team decides. */
 export const REFUND_ANSWER_DAYS = 3;
@@ -163,6 +164,11 @@ export async function recordRefund(
       }
     }
   });
+
+  // Refunded mentoring: calls still to come are canceled and the mentor is told.
+  if (full && order.productId) {
+    await cancelFutureBookings(order.buyerId, order.productId, "The buyer was refunded, so this call was canceled.");
+  }
 
   // A refunded membership stops renewing.
   if (full && order.subscription?.stripeSubscriptionId && order.subscription.status !== "CANCELED") {

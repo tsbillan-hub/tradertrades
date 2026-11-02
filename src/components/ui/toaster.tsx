@@ -28,7 +28,8 @@ function readFlash(): { text: string; kind: Kind } | null {
   return null;
 }
 
-export function Toaster() {
+/** `flash` is the raw flash cookie from the server, so a refresh in place (same address) still shows the toast. */
+export function Toaster({ flash: flashCookie }: { flash?: string | null }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const pathname = usePathname();
 
@@ -46,7 +47,7 @@ export function Toaster() {
   useEffect(() => {
     const flash = readFlash();
     if (flash) toast(flash.text, flash.kind);
-  }, [pathname]);
+  }, [pathname, flashCookie]);
 
   return (
     <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex flex-col items-center gap-2 px-4">

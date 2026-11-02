@@ -22,6 +22,7 @@ import {
 import { db } from "@/lib/db";
 import { absoluteUrl, env, features } from "@/lib/env";
 import { getViewer } from "@/server/dal";
+import { CHANGE_CUTOFF_HOURS, openSlots } from "@/server/bookings";
 import { isPublicProduct } from "@/server/commerce/checkout";
 import { mediaUrlById } from "@/server/queries/media";
 import { productCardInclude, publicProductWhere } from "@/server/queries/products";
@@ -46,7 +47,7 @@ import { INTERVAL_LABEL, marketLabel, productTypeInfo, skillLabel } from "@/lib/
 import { productSettings } from "@/lib/product-settings";
 import { insidePath, productPath, shareLink } from "@/lib/paths";
 import { formatDay, formatTime, formatWhen } from "@/lib/time";
-import { cn, durationLabel, formatDate, minutesLabel, money, plural, stripMarkdown, timeAgo, truncate } from "@/lib/utils";
+import { cn, durationLabel, minutesLabel, money, plural, stripMarkdown, timeAgo, truncate } from "@/lib/utils";
 import type { ProductType } from "@/generated/prisma/enums";
 
 type Props = { params: Promise<{ username: string; slug: string }> };
@@ -137,6 +138,8 @@ export default async function ProductPage({ params }: Props) {
   ]);
 
   const owns = entitlement?.status === "ACTIVE";
+  // Mentoring: show the next open time so buyers know they can actually get a call soon.
+  const nextOpen = product.type === "MENTORING" ? ((await openSlots({ mentorId: product.creatorId, settings, now: new Date() })).slots[0]?.start ?? null) : null;
   const canReview = Boolean(viewer && !isOwner && (paidOrders > 0 || entitlement?.source === "PURCHASE" || entitlement?.source === "SUBSCRIPTION"));
   const trailerSrc = trailer?.mediaId ? await mediaUrlById(trailer.mediaId) : null;
   const allFree = product.prices.length > 0 && product.prices.every((p) => p.amountCents === 0);
@@ -216,7 +219,7 @@ export default async function ProductPage({ params }: Props) {
           </div>
 
           {/* Buy box on small screens sits right under the media */}
-          <div className="mt-6 lg:hidden">
+          <div id="buy" className="mt-6 scroll-mt-24 lg:hidden">
             <BuyBox />
           </div>
 
@@ -697,8 +700,16 @@ export default async function ProductPage({ params }: Props) {
           <h2 className="text-xl">How mentoring works</h2>
           <div className="card mt-4 grid gap-5 p-5 sm:grid-cols-3">
             <Fact icon={<Clock />} title={`${minutesLabel(settings.durationMin)} calls`} body="One to one on video, with your screen and charts." />
-            <Fact icon={<CalendarClock />} title="Pick your time" body={`Book from ${creator.displayName.split(" ")[0]}'s calendar after you buy. At least ${settings.minNoticeHours} hours ahead.`} />
-            <Fact icon={<RotateCcw />} title="Plans change" body="Cancel or move a call up to 24 hours before it starts." />
+            <Fact
+              icon={<CalendarClock />}
+              title="Pick your time"
+              body={
+                nextOpen
+                  ? `Book from ${creator.displayName.split(" ")[0]}'s calendar after you buy. Next open time: ${formatWhen(nextOpen, tz)}.`
+                  : `Book from ${creator.displayName.split(" ")[0]}'s calendar after you buy. No open times right now, so message them before you buy.`
+              }
+            />
+            <Fact icon={<RotateCcw />} title="Plans change" body={`Move or cancel a call up to ${CHANGE_CUTOFF_HOURS} hours before it starts. Canceled calls go back into your account.`} />
           </div>
         </section>
       );

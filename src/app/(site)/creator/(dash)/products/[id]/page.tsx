@@ -254,7 +254,18 @@ export default async function EditProductPage({ params, searchParams }: Props) {
     const p = product!;
     if (p.type === "MENTORING") {
       return (
-        <Panel title="Calls" description="How booking works for buyers. Set your weekly hours in the calendar.">
+        <Panel
+          title="Calls"
+          description={
+            <>
+              How booking works for buyers. The times you&apos;re free are set in your{" "}
+              <Link href="/creator/calendar" className="link">
+                calendar
+              </Link>
+              .
+            </>
+          }
+        >
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Call length" name="durationMin">
               <Select name="durationMin" defaultValue={String(settings.durationMin)}>
