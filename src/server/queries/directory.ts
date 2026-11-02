@@ -66,17 +66,32 @@ export async function refreshCompanyRating(companyId: string) {
   await db.company.update({ where: { id: companyId }, data: { ratingAvg: agg._avg.rating ?? 0, ratingCount: agg._count } });
 }
 
+const byName = new Intl.Collator("en", { sensitivity: "base", numeric: true });
+
+export type CompanySort = "reviews" | "rating" | "popular" | "name";
+
+/**
+ * One page of companies in a human order. Sorting happens here rather than in the database so that "A to Z" puts
+ * "tastytrade" among the T's (the database sorts capital letters first). Lists are small, so this stays cheap.
+ */
+export async function companyPage(where: Prisma.CompanyWhereInput, sort: CompanySort, page: number, perPage: number) {
+  const all = await db.company.findMany({ where, select: { id: true, name: true, ratingCount: true, ratingAvg: true, clickCount: true } });
+  const cmp: Record<CompanySort, (a: (typeof all)[number], b: (typeof all)[number]) => number> = {
+    reviews: (a, b) => b.ratingCount - a.ratingCount || b.ratingAvg - a.ratingAvg || byName.compare(a.name, b.name),
+    rating: (a, b) => b.ratingAvg - a.ratingAvg || b.ratingCount - a.ratingCount || byName.compare(a.name, b.name),
+    popular: (a, b) => b.clickCount - a.clickCount || byName.compare(a.name, b.name),
+    name: (a, b) => byName.compare(a.name, b.name),
+  };
+  all.sort(cmp[sort]);
+  const ids = all.slice((page - 1) * perPage, page * perPage).map((c) => c.id);
+  const rows = ids.length ? await db.company.findMany({ where: { id: { in: ids } }, select: companyCardSelect }) : [];
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return { total: all.length, companies: ids.map((id) => byId.get(id)).filter((c): c is CompanyCardData => Boolean(c)) };
+}
+
 /** Where the "Visit website" button goes. Counted, then sent on. */
 export function goHref(slug: string, from: string, offerId?: string) {
   const qs = new URLSearchParams({ from });
   if (offerId) qs.set("offer", offerId);
   return `/go/${slug}?${qs}`;
-}
-
-export function domainOf(url: string) {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
 }

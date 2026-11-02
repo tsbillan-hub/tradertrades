@@ -11,9 +11,7 @@ import { rateLimit } from "@/server/rate-limit";
 import { audit } from "@/server/audit";
 import { removeMedia } from "@/server/storage";
 import { refreshCompanyRating } from "@/server/queries/directory";
-import { CATEGORIES } from "@/lib/constants";
-
-export const USED_FOR = ["Under 3 months", "3 to 12 months", "1 to 2 years", "Over 2 years"] as const;
+import { CATEGORIES, REVIEW_USED_FOR } from "@/lib/constants";
 
 const reviewSchema = z.object({
   companyId: z.string().min(1),
@@ -22,7 +20,7 @@ const reviewSchema = z.object({
   body: z.string().trim().min(30, "Write at least 30 characters so it helps other traders").max(3000, "3,000 characters at most"),
   pros: optionalText(500),
   cons: optionalText(500),
-  usedFor: z.enum(USED_FOR).optional().or(z.literal("").transform(() => undefined)),
+  usedFor: z.enum(REVIEW_USED_FOR).optional().or(z.literal("").transform(() => undefined)),
   proofMediaId: z.string().max(40).optional(),
 });
 
@@ -194,6 +192,7 @@ export async function suggestCompany(_: ActionState, formData: FormData): Promis
       worksThere: d.worksThere === "on",
     },
   });
+  refresh();
   return success(
     d.worksThere === "on"
       ? "Thanks. We'll check it and add it within a few days, then you can claim the listing for free."

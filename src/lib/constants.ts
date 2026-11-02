@@ -153,6 +153,9 @@ export const CATEGORIES: CategoryInfo[] = [
   },
 ];
 
+/** "How long have you used it?" on directory reviews. */
+export const REVIEW_USED_FOR = ["Under 3 months", "3 to 12 months", "1 to 2 years", "Over 2 years"] as const;
+
 export const categoryBySlug = (slug: string) => CATEGORIES.find((c) => c.slug === slug);
 export const categoryInfo = (value: CompanyCategory) => CATEGORIES.find((c) => c.value === value)!;
 

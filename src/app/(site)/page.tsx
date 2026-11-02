@@ -11,14 +11,17 @@ import { Avatar } from "@/components/ui/avatar";
 import { TrustBadges } from "@/components/market/badges";
 import { popularProducts, publicProductWhere, productCardInclude } from "@/server/queries/products";
 import { feeExample } from "@/lib/fees";
+import { categoryCounts, sponsoredFor } from "@/server/queries/directory";
+import { CompanyRow } from "@/components/directory/company-row";
+import type { CompanyCategory } from "@/generated/prisma/enums";
 
 export default async function HomePage() {
-  const [productCount, companyCount, creatorCount, popular, categoryCounts, featuredCreator] = await Promise.all([
+  const [productCount, companyCount, creatorCount, popular, counts, featuredCreator, sponsored] = await Promise.all([
     db.product.count({ where: publicProductWhere }),
     db.company.count({ where: { status: "PUBLISHED" } }),
     db.creatorProfile.count({ where: { status: "APPROVED" } }),
     popularProducts(8),
-    db.company.groupBy({ by: ["primaryCategory"], where: { status: "PUBLISHED" }, _count: { _all: true } }),
+    categoryCounts(),
     db.user.findFirst({
       where: { username: "tris", creator: { status: "APPROVED" } },
       include: {
@@ -26,8 +29,9 @@ export default async function HomePage() {
         products: { where: publicProductWhere, include: productCardInclude, orderBy: { salesCount: "desc" }, take: 3 },
       },
     }),
+    sponsoredFor("HOME"),
   ]);
-  const countFor = (c: string) => categoryCounts.find((x) => x.primaryCategory === c)?._count._all ?? 0;
+  const countFor = (c: CompanyCategory) => counts.get(c) ?? 0;
   const own = feeExample(10000, "OWN_AUDIENCE");
   const first = feeExample(10000, "MARKETPLACE_FIRST");
   const repeat = feeExample(10000, "MARKETPLACE_REPEAT");
@@ -142,6 +146,13 @@ export default async function HomePage() {
             </Link>
           ))}
         </div>
+        {sponsored.length ? (
+          <ul className="mt-4 grid gap-3 lg:grid-cols-2" aria-label="Sponsored">
+            {sponsored.map((s) => (
+              <CompanyRow key={s.slotId} company={s.company} from="sponsored:home" sponsored showCategory />
+            ))}
+          </ul>
+        ) : null}
       </section>
 
       {/* Fees for creators */}
