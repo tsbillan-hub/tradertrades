@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TraderTrades
 
-## Getting Started
+The marketplace built for traders: communities, courses, mentoring, alert rooms, indicators and downloads from trading creators, plus a directory of prop firms, brokers and trading tools.
 
-First, run the development server:
+Built with Next.js 16 (App Router), React 19, Tailwind CSS 4, Prisma 7 and Postgres.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Run it on your computer
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Install Node.js 22 and Postgres 16.
+2. Copy `.env.example` to `.env` and fill in `DATABASE_URL` and `APP_SECRET`.
+3. Install and set up the database:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+   ```bash
+   npm install
+   npx prisma migrate dev
+   npm run dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Open http://localhost:3000.
 
-## Learn More
+With no email service connected, emails are saved instead of sent. In preview mode (`DEMO_MODE=1`, the default outside production) the "confirm your email" page shows a link to open the saved email.
 
-To learn more about Next.js, take a look at the following resources:
+## Put it online (Vercel)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Push this code to a GitHub repository.
+2. Sign in at [vercel.com](https://vercel.com) with GitHub and choose **Add New → Project**, then import the repository. Keep the default settings.
+3. Before the first deploy (or right after it), open the project's **Storage** tab:
+   - Add **Neon** (Postgres). It sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED` for you.
+   - Add **Blob**. It sets `BLOB_READ_WRITE_TOKEN`, which is needed for uploads.
+4. In **Settings → Environment Variables**, add:
+   - `APP_SECRET`: any long random text (40+ characters). Keep it secret and don't change it later, or 2-step sign in will need setting up again.
+   - `ADMIN_EMAILS`: your email address. Accounts with this email get the admin panel.
+   - `DEMO_MODE`: `1` while you're testing (test checkout without Stripe, email links shown on screen). Remove it before real launch.
+5. Deploy (or **Redeploy**). Database migrations run automatically during the build.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Optional services, each switched on by adding its keys: Resend (`RESEND_API_KEY`, `EMAIL_FROM`) for real emails, Stripe (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) for real payments, Daily (`DAILY_API_KEY`) for video calls, and Anthropic (`ANTHROPIC_API_KEY`) for extra content checks.
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the dev server |
+| `npm run build` | Generate the Prisma client, run migrations on Vercel, build |
+| `npm run typecheck` | TypeScript check |
+| `npm run lint` | ESLint |
+| `npm run db:migrate` | Create and apply a migration locally |
