@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { db } from "@/lib/db";
 import { env, features } from "@/lib/env";
 import { getViewer } from "@/server/dal";
 import { PURPOSES, type Purpose } from "@/server/storage";
 import { rateLimit } from "@/server/rate-limit";
+import { canUploadFor } from "@/server/media-access";
 
 /** Hands the browser a short-lived token so it can upload straight to Vercel Blob. */
 export async function POST(request: Request) {
@@ -26,8 +26,7 @@ export async function POST(request: Request) {
         const rule = PURPOSES[purpose];
         if (!pathname.startsWith(`u/`) || !pathname.includes(`/${viewer.id}/`)) throw new Error("Bad path");
         if (rule.needsProduct) {
-          const product = payload.productId ? await db.product.findUnique({ where: { id: payload.productId }, select: { creatorId: true } }) : null;
-          if (!product || (product.creatorId !== viewer.id && !viewer.isAdmin)) throw new Error("Not your product");
+          if (!payload.productId || !(await canUploadFor(viewer, payload.productId, purpose))) throw new Error("You can't add files here");
         }
         return {
           allowedContentTypes: rule.types,

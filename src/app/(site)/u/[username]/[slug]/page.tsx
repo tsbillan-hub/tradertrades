@@ -45,7 +45,8 @@ import { ReportButton } from "@/components/report-button";
 import { INTERVAL_LABEL, marketLabel, productTypeInfo, skillLabel } from "@/lib/constants";
 import { productSettings } from "@/lib/product-settings";
 import { insidePath, productPath, shareLink } from "@/lib/paths";
-import { cn, durationLabel, formatDate, formatDateTime, minutesLabel, money, plural, stripMarkdown, timeAgo, truncate } from "@/lib/utils";
+import { formatDay, formatTime, formatWhen } from "@/lib/time";
+import { cn, durationLabel, formatDate, minutesLabel, money, plural, stripMarkdown, timeAgo, truncate } from "@/lib/utils";
 import type { ProductType } from "@/generated/prisma/enums";
 
 type Props = { params: Promise<{ username: string; slug: string }> };
@@ -98,6 +99,8 @@ export default async function ProductPage({ params }: Props) {
   const product = found;
   const viewer = await getViewer();
   const isOwner = viewer?.id === product.creatorId;
+  // Times show in the viewer's own time zone; signed-out visitors see the creator's.
+  const tz = viewer?.timezone ?? product.creator.timezone;
   const isPublic = isPublicProduct(product);
   if (!isPublic && !isOwner && !viewer?.isAdmin) notFound();
 
@@ -660,7 +663,7 @@ export default async function ProductPage({ params }: Props) {
                   {p.liveSessions.map((s) => (
                     <li key={s.id}>
                       <div className="font-medium">{s.title}</div>
-                      <div className="text-xs text-muted">{formatDateTime(s.startsAt)}</div>
+                      <div className="text-xs text-muted">{formatWhen(s.startsAt, tz)}</div>
                     </li>
                   ))}
                 </ul>
@@ -747,7 +750,7 @@ export default async function ProductPage({ params }: Props) {
         <section className="mt-10">
           <h2 className="text-xl">When</h2>
           <div className="card mt-4 grid gap-5 p-5 sm:grid-cols-3">
-            <Fact icon={<CalendarClock />} title={p.startsAt ? formatDate(p.startsAt, { weekday: "long", month: "long", day: "numeric" }) : "Date coming soon"} body={p.startsAt ? formatDateTime(p.startsAt) : "Ticket holders get an email when it's set."} />
+            <Fact icon={<CalendarClock />} title={p.startsAt ? formatDay(p.startsAt, tz) : "Date coming soon"} body={p.startsAt ? `Starts ${formatTime(p.startsAt, tz)}` : "Ticket holders get an email when it's set."} />
             <Fact icon={<Clock />} title={minutesLabel(settings.eventMinutes)} body="Live, with time for questions." />
             <Fact icon={<Video />} title="Recording" body="Ticket holders can watch it back afterwards." />
           </div>

@@ -10,6 +10,7 @@ import { absoluteUrl } from "@/lib/env";
 import { checkbox, dollars, fail, formObject, invalid, optionalText, success, type ActionState } from "@/lib/forms";
 import { PLATFORMS, productTypeInfo } from "@/lib/constants";
 import { STARTER_INCLUDES, productSettings } from "@/lib/product-settings";
+import { zonedToUtc } from "@/lib/time";
 import { productPath } from "@/lib/paths";
 import { slugify } from "@/lib/utils";
 import { requireCreator } from "@/server/dal";
@@ -178,8 +179,11 @@ export async function saveProductDetails(_: ActionState, formData: FormData): Pr
   let startsAt: Date | null = product.startsAt;
   if (product.type === "EVENT") {
     if (d.startsAt) {
-      const t = new Date(d.startsAt);
-      if (Number.isNaN(t.getTime())) return fail("Check the date.", formData, { startsAt: ["Pick a valid date and time"] });
+      // The form shows the creator's own time zone, so read it back in that zone.
+      const tz = product.creatorId === user.id ? user.timezone : ((await db.user.findUnique({ where: { id: product.creatorId }, select: { timezone: true } }))?.timezone ?? "UTC");
+      const [day, time] = d.startsAt.split("T");
+      const t = zonedToUtc(day ?? "", (time ?? "").slice(0, 5), tz);
+      if (!t) return fail("Check the date.", formData, { startsAt: ["Pick a valid date and time"] });
       startsAt = t;
     } else startsAt = null;
   }

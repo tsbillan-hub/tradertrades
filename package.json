@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p .",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "db:seed-directory": "tsx --env-file-if-exists=.env scripts/seed-directory.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

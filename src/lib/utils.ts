@@ -118,7 +118,7 @@ export function orderNumber(n: number) {
   return `TT-${(10000 + n).toString()}`;
 }
 
-/** Converts a YouTube or Vimeo link into an embeddable player URL. */
+/** Converts a YouTube, Vimeo or Loom link into an embeddable player URL. */
 export function toEmbedUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   try {
@@ -137,6 +137,10 @@ export function toEmbedUrl(url: string | null | undefined): string | null {
       if (id && /^\d+$/.test(id)) return `https://player.vimeo.com/video/${id}`;
     }
     if (host === "player.vimeo.com") return url;
+    if (host === "loom.com" && (u.pathname.startsWith("/share/") || u.pathname.startsWith("/embed/"))) {
+      const id = u.pathname.split("/")[2];
+      if (id && /^[a-zA-Z0-9]+$/.test(id)) return `https://www.loom.com/embed/${id}`;
+    }
   } catch {
     return null;
   }

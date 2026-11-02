@@ -32,3 +32,12 @@ export async function hasProductAccess(userId: string, productId: string) {
   if (ent.endsAt && ent.endsAt < new Date()) return false;
   return true;
 }
+
+/** Who may upload files tied to a product: its creator or an admin, and for post images, its members too. */
+export async function canUploadFor(viewer: { id: string; isAdmin: boolean }, productId: string, purpose: string) {
+  const product = await db.product.findUnique({ where: { id: productId }, select: { creatorId: true } });
+  if (!product) return false;
+  if (product.creatorId === viewer.id || viewer.isAdmin) return true;
+  if (purpose === "post") return hasProductAccess(viewer.id, productId);
+  return false;
+}

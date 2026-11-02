@@ -15,3 +15,9 @@ if (!process.env.DATABASE_URL && !process.env.DATABASE_URL_UNPOOLED) {
 }
 console.log("[migrate] Applying migrations...");
 execSync("npx prisma migrate deploy", { stdio: "inherit" });
+
+// Keep the starting directory listings in place (claimed listings are never touched).
+if (process.env.DATABASE_URL) {
+  console.log("[migrate] Refreshing directory listings...");
+  execSync("npx tsx scripts/seed-directory.ts", { stdio: "inherit" });
+}

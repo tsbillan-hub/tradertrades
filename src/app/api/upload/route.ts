@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { features } from "@/lib/env";
 import { getViewer } from "@/server/dal";
 import { PURPOSES, UploadError, mediaUrl, saveMedia, type Purpose } from "@/server/storage";
 import { rateLimit } from "@/server/rate-limit";
 import { sameOrigin } from "@/server/http";
+import { canUploadFor } from "@/server/media-access";
 
 /**
  * Local uploads (no Blob token): the browser sends the raw file as the request body.
@@ -27,8 +27,7 @@ export async function POST(request: Request) {
   const rule = PURPOSES[purpose];
   if (rule.needsProduct) {
     if (!productId) return NextResponse.json({ error: "Missing product" }, { status: 400 });
-    const product = await db.product.findUnique({ where: { id: productId }, select: { creatorId: true } });
-    if (!product || (product.creatorId !== viewer.id && !viewer.isAdmin)) return NextResponse.json({ error: "Not your product" }, { status: 403 });
+    if (!(await canUploadFor(viewer, productId, purpose))) return NextResponse.json({ error: "You can't add files here" }, { status: 403 });
   }
   if (!request.body) return NextResponse.json({ error: "No file" }, { status: 400 });
 

@@ -27,6 +27,7 @@ import { productSettings } from "@/lib/product-settings";
 import { PRODUCT_STATUS_BADGE } from "@/lib/product-status";
 import { insidePath, productPath } from "@/lib/paths";
 import { cn, money, plural } from "@/lib/utils";
+import { utcToZoned } from "@/lib/time";
 import type { BillingInterval } from "@/generated/prisma/enums";
 
 export const metadata: Metadata = { title: "Edit product" };
@@ -122,7 +123,23 @@ export default async function EditProductPage({ params, searchParams }: Props) {
               <div className="label">Cover image</div>
               <ImageField name="coverUrl" defaultUrl={p.coverUrl} purpose="cover" shape="wide" label="Upload cover" hint="16:9 works best, like 1600 × 900. Leave it empty and we design one from your title." />
             </div>
-            <Field label="Trailer video" name="trailerId" optional hint={videos.length ? "Plays at the top of your listing." : "Post a video on your profile first, then pick it here."}>
+            <Field label="Trailer video" name="trailerId" optional hint={
+                videos.length ? (
+                  <>
+                    Plays at the top of your listing.{" "}
+                    <Link href={`/creator/videos/new?product=${p.id}`} className="link">
+                      Post a new video
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href={`/creator/videos/new?product=${p.id}`} className="link">
+                      Post a video
+                    </Link>{" "}
+                    first, then pick it here.
+                  </>
+                )
+              }>
               <Select name="trailerId" defaultValue={p.trailerId ?? ""}>
                 <option value="">No trailer</option>
                 {videos.map((v) => (
@@ -322,7 +339,8 @@ export default async function EditProductPage({ params, searchParams }: Props) {
       );
     }
     if (p.type === "EVENT") {
-      const local = p.startsAt ? new Date(p.startsAt.getTime() - p.startsAt.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
+      const zoned = p.startsAt ? utcToZoned(p.startsAt, user.timezone) : null;
+      const local = zoned ? `${zoned.date}T${zoned.time}` : "";
       return (
         <Panel title="Event time">
           <div className="grid gap-5 sm:grid-cols-2">

@@ -373,7 +373,17 @@ export default async function ProfilePage({ params, searchParams }: Props) {
                 ))}
               </div>
             ) : (
-              <EmptyState title="No videos yet" description={isMe ? "Post a video from your creator dashboard." : undefined} />
+              <EmptyState
+                title="No videos yet"
+                description={isMe ? "Share a setup walkthrough, a trade review or a tour of what you offer." : undefined}
+                action={
+                  isMe ? (
+                    <Link href="/creator/videos/new" className="btn btn-primary">
+                      Post a video
+                    </Link>
+                  ) : undefined
+                }
+              />
             )
           ) : null}
 

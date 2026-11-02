@@ -17,6 +17,10 @@ export type ProductSettings = {
   welcome: string;
   /** Events: length in minutes. */
   eventMinutes: number;
+  /** Events: link to the recording, shown to ticket holders afterwards. */
+  recordingUrl: string;
+  /** Indicators: setup steps shown to buyers inside. */
+  instructions: string;
 };
 
 const DEFAULTS: ProductSettings = {
@@ -30,6 +34,8 @@ const DEFAULTS: ProductSettings = {
   accessType: "username",
   welcome: "",
   eventMinutes: 60,
+  recordingUrl: "",
+  instructions: "",
 };
 
 export function productSettings(raw: unknown): ProductSettings {
@@ -50,6 +56,8 @@ export function productSettings(raw: unknown): ProductSettings {
   if (typeof r.indicatorPlatform === "string") out.indicatorPlatform = r.indicatorPlatform.slice(0, 40);
   if (r.accessType === "username" || r.accessType === "download" || r.accessType === "license") out.accessType = r.accessType;
   if (typeof r.welcome === "string") out.welcome = r.welcome.slice(0, 2000);
+  if (typeof r.recordingUrl === "string" && /^https:\/\//.test(r.recordingUrl)) out.recordingUrl = r.recordingUrl.slice(0, 500);
+  if (typeof r.instructions === "string") out.instructions = r.instructions.slice(0, 4000);
   return out;
 }
 

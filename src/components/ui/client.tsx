@@ -147,18 +147,23 @@ export function ModalButton({
   children,
   className,
   variant = "secondary",
+  iconOnly,
 }: {
   label: ReactNode;
   title: ReactNode;
   children: ReactNode | ((close: () => void) => ReactNode);
   className?: string;
   variant?: "primary" | "secondary" | "ghost" | "accent" | "danger";
+  /** The label is just an icon: the title becomes the button's name. */
+  iconOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  // Icon-only buttons take their name from the dialog title.
+  const iconName = iconOnly && typeof title === "string" ? title : undefined;
   return (
     <>
-      <button type="button" className={cn("btn", `btn-${variant}`, className)} onClick={() => setOpen(true)}>
+      <button type="button" className={cn("btn", `btn-${variant}`, className)} onClick={() => setOpen(true)} aria-label={iconName} title={iconName}>
         {label}
       </button>
       <Modal open={open} onClose={close} title={title}>

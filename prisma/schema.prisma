@@ -101,6 +101,12 @@ enum CompanyCategory {
   VPS
 }
 
+enum SuggestionStatus {
+  PENDING
+  ADDED
+  REJECTED
+}
+
 enum CompanyStatus {
   PUBLISHED
   HIDDEN
@@ -469,54 +475,56 @@ model User {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
-  sessions         Session[]
-  authTokens       AuthToken[]
-  creator          CreatorProfile?
-  socialLinks      SocialLink[]
-  memberships      BusinessMember[]
-  claims           CompanyClaim[]
-  companyReviews   CompanyReview[]
-  reviewVotes      ReviewVote[]
-  products         Product[]             @relation("CreatorProducts")
-  entitlements     Entitlement[]
-  ordersBought     Order[]               @relation("OrderBuyer")
-  ordersSold       Order[]               @relation("OrderSeller")
-  subscriptions    Subscription[]        @relation("SubBuyer")
-  subscribers      Subscription[]        @relation("SubSeller")
-  coupons          Coupon[]
-  buyerRelations   BuyerRelation[]       @relation("RelBuyer")
-  sellerRelations  BuyerRelation[]       @relation("RelSeller")
-  ledger           LedgerEntry[]
-  payouts          Payout[]
-  refundsRequested Refund[]              @relation("RefundRequester")
-  productReviews   ProductReview[]
-  lessonProgress   LessonProgress[]
-  posts            Post[]
-  comments         Comment[]
-  reactions        Reaction[]
-  indicatorAccess  IndicatorAccess[]
-  availability     AvailabilityRule[]
-  timeOff          AvailabilityBlock[]
-  bookingsAsMentor Booking[]             @relation("BookingMentor")
-  bookingsAsBuyer  Booking[]             @relation("BookingBuyer")
-  conversations    ConversationMember[]
-  messages         Message[]
-  blocks           Block[]               @relation("Blocker")
-  blockedBy        Block[]               @relation("Blocked")
-  notifications    Notification[]
-  verifications    VerificationRequest[] @relation("VerificationUser")
-  reports          Report[]              @relation("Reporter")
-  media            Media[]
-  videos           VideoPost[]
-  deals            Deal[]
-  jobs             JobPost[]
-  jobApplications  JobApplication[]
-  saved            SavedItem[]           @relation("SavedBy")
-  savedBy          SavedItem[]           @relation("SavedCreator")
-  following        Follow[]              @relation("Follower")
-  followers        Follow[]              @relation("Following")
-  waitlists        WaitlistEntry[]
-  campaignsCreated Campaign[]
+  sessions           Session[]
+  authTokens         AuthToken[]
+  creator            CreatorProfile?
+  socialLinks        SocialLink[]
+  memberships        BusinessMember[]
+  claims             CompanyClaim[]
+  companyReviews     CompanyReview[]
+  reviewVotes        ReviewVote[]
+  products           Product[]             @relation("CreatorProducts")
+  entitlements       Entitlement[]
+  ordersBought       Order[]               @relation("OrderBuyer")
+  ordersSold         Order[]               @relation("OrderSeller")
+  subscriptions      Subscription[]        @relation("SubBuyer")
+  subscribers        Subscription[]        @relation("SubSeller")
+  coupons            Coupon[]
+  buyerRelations     BuyerRelation[]       @relation("RelBuyer")
+  sellerRelations    BuyerRelation[]       @relation("RelSeller")
+  ledger             LedgerEntry[]
+  payouts            Payout[]
+  refundsRequested   Refund[]              @relation("RefundRequester")
+  productReviews     ProductReview[]
+  lessonProgress     LessonProgress[]
+  channelReads       ChannelRead[]
+  companySuggestions CompanySuggestion[]
+  posts              Post[]
+  comments           Comment[]
+  reactions          Reaction[]
+  indicatorAccess    IndicatorAccess[]
+  availability       AvailabilityRule[]
+  timeOff            AvailabilityBlock[]
+  bookingsAsMentor   Booking[]             @relation("BookingMentor")
+  bookingsAsBuyer    Booking[]             @relation("BookingBuyer")
+  conversations      ConversationMember[]
+  messages           Message[]
+  blocks             Block[]               @relation("Blocker")
+  blockedBy          Block[]               @relation("Blocked")
+  notifications      Notification[]
+  verifications      VerificationRequest[] @relation("VerificationUser")
+  reports            Report[]              @relation("Reporter")
+  media              Media[]
+  videos             VideoPost[]
+  deals              Deal[]
+  jobs               JobPost[]
+  jobApplications    JobApplication[]
+  saved              SavedItem[]           @relation("SavedBy")
+  savedBy            SavedItem[]           @relation("SavedCreator")
+  following          Follow[]              @relation("Follower")
+  followers          Follow[]              @relation("Following")
+  waitlists          WaitlistEntry[]
+  campaignsCreated   Campaign[]
 
   @@index([accountType])
   @@index([status])
@@ -683,8 +691,28 @@ model Company {
   saved         SavedItem[]
   orders        Order[]
   verifications VerificationRequest[]
+  suggestions   CompanySuggestion[]
 
   @@index([primaryCategory, status])
+}
+
+/// "Can't find a company? Add it." Our team checks each one before it goes in the directory.
+model CompanySuggestion {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  website    String
+  category   CompanyCategory
+  note       String?
+  worksThere Boolean          @default(false)
+  status     SuggestionStatus @default(PENDING)
+  companyId  String?
+  company    Company?         @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  reviewedAt DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@index([status, createdAt])
 }
 
 model BusinessMember {
@@ -948,8 +976,20 @@ model Channel {
   position      Int           @default(0)
   createdAt     DateTime      @default(now())
   posts         Post[]
+  reads         ChannelRead[]
 
   @@unique([productId, slug])
+}
+
+/// When a member last opened a channel, to show which channels have new posts.
+model ChannelRead {
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId  String
+  channel    Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  lastReadAt DateTime @default(now())
+
+  @@id([userId, channelId])
 }
 
 model Post {

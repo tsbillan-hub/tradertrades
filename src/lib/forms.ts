@@ -77,7 +77,9 @@ export const optionalUrl = z
   .string()
   .trim()
   .max(500)
-  .transform((v) => (v === "" ? undefined : v))
+  // Missing (a field that isn't on screen) and empty both mean "no link".
+  .optional()
+  .transform((v) => (v ? v : undefined))
   .pipe(z.url({ protocol: /^https?$/, error: "Enter a full link starting with https://" }).optional());
 
 export const optionalText = (max: number) =>
@@ -88,8 +90,10 @@ export const optionalText = (max: number) =>
     .transform((v) => (v === "" ? undefined : v))
     .optional();
 
+// An unticked box isn't sent at all, so the key has to be optional (Zod 4 rejects a missing key otherwise).
 export const checkbox = z
-  .union([z.literal("on"), z.literal("true"), z.literal("1"), z.literal(""), z.undefined()])
+  .union([z.literal("on"), z.literal("true"), z.literal("1"), z.literal("")])
+  .optional()
   .transform((v) => v === "on" || v === "true" || v === "1");
 
 export const dollars = (opts: { min?: number; max?: number } = {}) =>
