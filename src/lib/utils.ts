@@ -170,3 +170,13 @@ export function safeNext(next: string | null | undefined, fallback = "/") {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return fallback;
   return next;
 }
+
+/** A date `days` from now (negative for the past). Keeps Date.now() out of render code. */
+export function daysFromNow(days: number) {
+  return new Date(Date.now() + days * 86400_000);
+}
+
+/** Milliseconds since a date. */
+export function msSince(d: Date) {
+  return Date.now() - d.getTime();
+}

@@ -48,7 +48,7 @@ export default async function VerificationPage() {
         They show people the profile really belongs to you. You can buy and sell without them.
       </Notice>
 
-      <Panel title="Email" description="Needed to buy, post, review and message." action={<Status done={user.emailVerifiedAt} label="Confirmed" />}>
+      <Panel title="Email" description="Needed to post, review and message. It also makes sure receipts and sign-in links reach you." action={<Status done={user.emailVerifiedAt} label="Confirmed" />}>
         {!user.emailVerifiedAt ? (
           <Link href="/verify-email" className="btn btn-secondary btn-sm">
             <Mail /> Confirm my email

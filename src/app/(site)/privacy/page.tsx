@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
       <Section title="Why we use it">
         <ul>
           <li>To run your account, deliver what you buy and pay creators.</li>
-          <li>To keep people safe: checking creators, stopping fraud, spam and scams.</li>
+          <li>To keep people safe: checking listings for banned claims, stopping fraud, spam and scams.</li>
           <li>To send emails you asked for (receipts, messages, bookings). You choose which ones in <Link href="/settings/notifications">settings</Link>.</li>
           <li>To work out who brought a buyer, so creators are charged the right fee.</li>
         </ul>

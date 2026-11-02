@@ -166,7 +166,7 @@ export async function resendVerification(): Promise<ActionState> {
   return success(`Sent a new link to ${user.email}.`);
 }
 
-export async function resendVerificationForm(_: ActionState): Promise<ActionState> {
+export async function resendVerificationForm(): Promise<ActionState> {
   return resendVerification();
 }
 

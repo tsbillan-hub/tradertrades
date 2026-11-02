@@ -51,9 +51,11 @@ export function scanText(text: string): Hit[] {
  * Checks text before it is saved. Blocking rules stop the save (unless the sentence is clearly saying the
  * opposite, like "we never offer account management"). Warning rules create a flag for admins.
  */
-export async function checkText(text: string, target?: { type: ReportTarget; id: string } | null) {
+export async function checkText(text: string, target?: { type: ReportTarget; id: string } | null, opts: { block?: boolean } = {}) {
   const hits = scanText(text);
-  const blocking = hits.filter((h) => h.rule.severity === "block" && !h.negated);
+  // Buyers' reviews may quote a seller's claims, so for them every hit is only flagged for a person to look at.
+  const canBlock = opts.block !== false;
+  const blocking = canBlock ? hits.filter((h) => h.rule.severity === "block" && !h.negated) : [];
   if (blocking.length) {
     const labels = [...new Set(blocking.map((b) => b.rule.label.toLowerCase()))].join(", ");
     return {
@@ -62,7 +64,7 @@ export async function checkText(text: string, target?: { type: ReportTarget; id:
       message: `This can't be posted because it looks like ${labels}. TraderTrades doesn't allow that. Reword it and try again, or contact support if we got it wrong.`,
     };
   }
-  const flags = hits.filter((h) => h.rule.severity === "warn" || h.negated);
+  const flags = canBlock ? hits.filter((h) => h.rule.severity === "warn" || h.negated) : hits;
   if (target && flags.length) {
     await db.moderationFlag.createMany({
       data: flags.map((f) => ({

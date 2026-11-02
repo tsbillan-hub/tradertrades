@@ -26,7 +26,7 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
             <CircleCheck className="size-6" />
           </div>
           <h1 className="text-[26px]">Email confirmed</h1>
-          <p className="mt-1.5 text-sm text-muted">You&apos;re all set. You can now buy, post, review and message.</p>
+          <p className="mt-1.5 text-sm text-muted">You&apos;re all set. You can now post, review and message.</p>
           <Link href={safeNext(next, viewer ? "/" : "/login")} className="btn btn-primary btn-lg mt-6 w-full">
             {viewer ? "Continue" : "Sign in"}
           </Link>

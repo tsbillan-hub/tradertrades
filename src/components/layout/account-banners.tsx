@@ -22,7 +22,7 @@ export async function AccountBanners() {
           <div className="container-tt flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm">
             <MailWarning className="size-4 shrink-0" />
             <span>
-              Confirm your email ({viewer.email}) to buy, post, review and message.
+              Confirm your email ({viewer.email}) to post, review and message.
             </span>
             <ResendVerifyButton />
           </div>

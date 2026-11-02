@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
     return [
       { source: "/@:username", destination: "/u/:username" },
       { source: "/@:username/:slug", destination: "/u/:username/:slug" },
+      { source: "/@:username/:slug/:path*", destination: "/u/:username/:slug/:path*" },
     ];
   },
   async headers() {

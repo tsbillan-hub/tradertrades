@@ -6,9 +6,11 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Menu as MenuIcon, X } from "lucide-react";
 
 export function MobileNav({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  useEffect(() => setOpen(false), [pathname]);
+  // Remember which page the menu was opened on, so it closes by itself after navigating.
+  const [openOn, setOpenOn] = useState<string | null>(null);
+  const open = openOn === pathname;
+  const setOpen = (v: boolean) => setOpenOn(v ? pathname : null);
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {

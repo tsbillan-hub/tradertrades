@@ -170,13 +170,17 @@ export function ModalButton({
 
 type ThemeChoice = "system" | "light" | "dark";
 
+function persistTheme(next: ThemeChoice) {
+  document.cookie = `tt_theme=${next}; path=/; max-age=31536000; samesite=lax`;
+  if (next === "system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", next);
+}
+
 export function ThemeToggle({ initial, className }: { initial: ThemeChoice; className?: string }) {
   const [theme, setTheme] = useState<ThemeChoice>(initial);
   function apply(next: ThemeChoice) {
     setTheme(next);
-    document.cookie = `tt_theme=${next}; path=/; max-age=31536000; samesite=lax`;
-    if (next === "system") document.documentElement.removeAttribute("data-theme");
-    else document.documentElement.setAttribute("data-theme", next);
+    persistTheme(next);
   }
   const opts: { v: ThemeChoice; icon: ReactNode; label: string }[] = [
     { v: "light", icon: <Sun />, label: "Light" },

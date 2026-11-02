@@ -802,36 +802,38 @@ model FeaturedSlot {
 // ───────────────────────────── Marketplace ─────────────────────────────
 
 model Product {
-  id          String        @id @default(cuid())
-  creatorId   String
-  creator     User          @relation("CreatorProducts", fields: [creatorId], references: [id], onDelete: Cascade)
-  type        ProductType
-  slug        String
-  title       String
-  subtitle    String?
-  description String?
-  coverUrl    String?
-  trailerId   String?
-  status      ProductStatus @default(DRAFT)
-  launchState LaunchState   @default(OPEN)
-  reviewNote  String?
-  submittedAt DateTime?
-  publishedAt DateTime?
-  markets     Market[]
-  level       SkillLevel    @default(ALL)
-  tags        String[]
-  platforms   String[]
-  includes    String[]
-  settings    Json?
-  startsAt    DateTime?
-  refundDays  Int           @default(7)
-  memberLimit Int?
-  salesCount  Int           @default(0)
-  ratingAvg   Float         @default(0)
-  ratingCount Int           @default(0)
-  isSample    Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  creatorId      String
+  creator        User          @relation("CreatorProducts", fields: [creatorId], references: [id], onDelete: Cascade)
+  type           ProductType
+  slug           String
+  title          String
+  subtitle       String?
+  description    String?
+  coverUrl       String?
+  trailerId      String?
+  status         ProductStatus @default(DRAFT)
+  launchState    LaunchState   @default(OPEN)
+  reviewNote     String?
+  submittedAt    DateTime?
+  publishedAt    DateTime?
+  markets        Market[]
+  level          SkillLevel    @default(ALL)
+  tags           String[]
+  platforms      String[]
+  includes       String[]
+  settings       Json?
+  startsAt       DateTime?
+  refundDays     Int           @default(7)
+  memberLimit    Int?
+  salesCount     Int           @default(0)
+  /// Lowest active price, kept in sync when prices change. Used for price filters and sorting.
+  priceFromCents Int           @default(0)
+  ratingAvg      Float         @default(0)
+  ratingCount    Int           @default(0)
+  isSample       Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   prices          Price[]
   modules         CourseModule[]
@@ -854,6 +856,7 @@ model Product {
 
   @@unique([creatorId, slug])
   @@index([status, type])
+  @@index([status, priceFromCents])
 }
 
 model Price {
@@ -1226,6 +1229,8 @@ model Refund {
   decisionNote   String?
   stripeRefundId String?
   processedAt    DateTime?
+  /// Sent to the TraderTrades team: the creator didn't answer within 3 days, or the buyer asked for a review.
+  escalatedAt    DateTime?
   createdAt      DateTime     @default(now())
 
   @@index([status])

@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 type Who = {
   idVerifiedAt?: Date | null;
   socialsVerifiedAt?: Date | null;
-  creator?: { resultsCheckedAt?: Date | null } | null;
 };
 
 /** Small tick next to a name when the person's ID has been checked. */
