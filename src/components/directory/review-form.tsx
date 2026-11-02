@@ -55,7 +55,7 @@ export function CompanyReviewForm({ companyId, companyName, mine }: { companyId:
         <div className="text-sm font-semibold">Proof you used it (optional)</div>
         <p className="mt-0.5 text-[13px] text-muted">
           A screenshot of your account, an invoice or a payout email. Only our team sees it, never the company or other traders. Hide account numbers first. Reviews with proof get
-          a &ldquo;Proof of use&rdquo; tag once we&apos;ve looked.
+          a &ldquo;Proof of use&rdquo; tag once we&apos;ve looked, and we delete the file as soon as we&apos;ve checked it.
         </p>
         <input type="hidden" name="proofMediaId" value={proof?.id ?? ""} />
         <div className="mt-3 flex flex-wrap items-center gap-2">

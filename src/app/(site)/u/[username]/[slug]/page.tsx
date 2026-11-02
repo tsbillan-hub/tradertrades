@@ -638,7 +638,7 @@ export default async function ProductPage({ params }: Props) {
       return (
         <section className="mt-10">
           <h2 className="text-xl">Inside the community</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="card p-5">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Hash className="size-4 text-muted" /> Channels
@@ -649,7 +649,7 @@ export default async function ProductPage({ params }: Props) {
                     <li key={c.id} className="flex items-center gap-2">
                       {c.kind === "ANNOUNCEMENTS" ? <Megaphone className="size-3.5 text-muted" /> : <Hash className="size-3.5 text-muted" />}
                       <span className="font-medium">{c.name}</span>
-                      {c.description ? <span className="truncate text-muted">· {c.description}</span> : null}
+                      {c.description ? <span className="min-w-0 truncate text-muted">· {c.description}</span> : null}
                     </li>
                   ))}
                 </ul>

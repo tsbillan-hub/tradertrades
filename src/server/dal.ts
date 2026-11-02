@@ -31,6 +31,8 @@ export async function requireUser() {
 export async function requireVerifiedUser() {
   const user = await requireUser();
   if (!user.emailVerifiedAt) redirect(`/verify-email?next=${encodeURIComponent(await currentPath())}`);
+  // Suspended accounts keep what they bought but can't post, message, review, report or sell.
+  if (user.status === "SUSPENDED") redirect("/suspended");
   return user;
 }
 

@@ -386,6 +386,11 @@ export async function unpublishProduct(formData: FormData) {
 export async function archiveProduct(formData: FormData) {
   const { user, product } = await ownProduct(String(formData.get("productId") ?? ""));
   if (!product) return;
+  // A listing our team took down stays down until we put it back, so it can't be archived and restored.
+  if (product.status === "SUSPENDED") {
+    await flash("Our team took this listing down, so it can't be changed. Contact support if you think that's a mistake.", "error");
+    return;
+  }
   const buyers = await db.entitlement.count({ where: { productId: product.id } });
   const orders = await db.order.count({ where: { productId: product.id } });
   if (!buyers && !orders && product.status !== "PUBLISHED") {

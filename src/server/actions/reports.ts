@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { fail, invalid, optionalText, success, type ActionState } from "@/lib/forms";
 import { requireVerifiedUser } from "@/server/dal";
 import { rateLimit } from "@/server/rate-limit";
+import { TARGET_LABEL, notifyAdmins } from "@/server/admin";
 
 const TARGETS = ["USER", "PRODUCT", "PRODUCT_REVIEW", "COMPANY", "COMPANY_REVIEW", "POST", "COMMENT", "MESSAGE", "VIDEO", "JOB", "CAMPAIGN"] as const;
 const REASONS = ["SCAM", "MISLEADING_CLAIMS", "BANNED_PRODUCT", "HARASSMENT", "SPAM", "IMPERSONATION", "COPYRIGHT", "OTHER"] as const;
@@ -21,5 +22,6 @@ export async function submitReport(_: ActionState, formData: FormData): Promise<
   const dupe = await db.report.findFirst({ where: { reporterId: user.id, targetType: d.targetType, targetId: d.targetId, status: "OPEN" } });
   if (dupe) return success("You've already reported this. Our team is on it.");
   await db.report.create({ data: { reporterId: user.id, targetType: d.targetType, targetId: d.targetId, reason: d.reason, details: d.details } });
+  await notifyAdmins({ type: "admin.report", title: `New report: ${TARGET_LABEL[d.targetType].toLowerCase()}`, url: "/admin/reports" });
   return success("Thanks. A person on our team will look at this, usually within a day.");
 }

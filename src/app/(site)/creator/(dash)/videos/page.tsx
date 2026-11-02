@@ -34,7 +34,8 @@ export default async function CreatorVideosPage() {
         <ul className="card divide-y divide-line">
           {videos.map((v) => {
             const thumb = v.posterUrl ?? youtubeThumb(v.embedUrl);
-            const hidden = v.status === "HIDDEN";
+            const removed = v.status === "REMOVED";
+            const hidden = v.status === "HIDDEN" || removed;
             return (
               <li key={v.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
                 <Link href={`/v/${v.id}`} className="flex min-w-0 flex-1 items-center gap-4">
@@ -54,7 +55,11 @@ export default async function CreatorVideosPage() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="truncate font-semibold">{v.title}</span>
-                      {hidden ? <span className="badge badge-outline">Hidden</span> : null}
+                      {removed ? (
+                        <span className="badge badge-bad">Taken down by our team</span>
+                      ) : hidden ? (
+                        <span className="badge badge-outline">Hidden</span>
+                      ) : null}
                       {!hidden && v.id === pinnedId ? (
                         <span className="badge badge-outline">
                           <Pin className="size-3" /> Pinned
@@ -72,10 +77,12 @@ export default async function CreatorVideosPage() {
                   <Link href={`/creator/videos/${v.id}`} className="btn btn-secondary btn-sm">
                     <PencilLine /> Edit
                   </Link>
-                  <ActionButton action={setVideoHidden} fields={{ videoId: v.id }} variant="ghost" title={hidden ? "Show on my page" : "Hide from my page"}>
-                    {hidden ? <Eye /> : <EyeOff />}
-                    {hidden ? "Show" : "Hide"}
-                  </ActionButton>
+                  {removed ? null : (
+                    <ActionButton action={setVideoHidden} fields={{ videoId: v.id }} variant="ghost" title={hidden ? "Show on my page" : "Hide from my page"}>
+                      {hidden ? <Eye /> : <EyeOff />}
+                      {hidden ? "Show" : "Hide"}
+                    </ActionButton>
+                  )}
                   <ActionButton action={deleteVideo} fields={{ videoId: v.id }} variant="ghost" className="btn-icon" title="Delete video" confirm={`Delete "${v.title}"? This can't be undone.`}>
                     <Trash2 />
                   </ActionButton>

@@ -136,6 +136,10 @@ export async function setVideoHidden(formData: FormData) {
   const user = await requireCreator();
   const video = await db.videoPost.findFirst({ where: { id: String(formData.get("videoId") ?? ""), authorId: user.id } });
   if (!video) return;
+  if (video.status === "REMOVED") {
+    await flash("Our team took this video down, so it can't go back on your page.", "error");
+    return refresh();
+  }
   const hide = video.status === "PUBLISHED";
   await db.videoPost.update({ where: { id: video.id }, data: { status: hide ? "HIDDEN" : "PUBLISHED" } });
   await flash(hide ? "Hidden from your page." : "Back on your page.");

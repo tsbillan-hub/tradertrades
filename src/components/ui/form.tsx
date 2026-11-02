@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  startTransition,
   useActionState,
   useContext,
   useEffect,
@@ -23,6 +24,8 @@ const FormContext = createContext<FormCtx>({ state: initialState, pending: false
 export function useFormState() {
   return useContext(FormContext);
 }
+
+type SubmitEvt = Parameters<NonNullable<ComponentProps<"form">["onSubmit"]>>[0];
 
 type ActionFormProps = Omit<ComponentProps<"form">, "action"> & {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
@@ -46,6 +49,7 @@ export function ActionForm({
   refreshOnSuccess,
   onSuccess,
   children,
+  onSubmit,
   ...rest
 }: ActionFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
@@ -67,9 +71,23 @@ export function ActionForm({
     }
   }, [state, toastOnSuccess, resetOnSuccess, successHref, refreshOnSuccess, onSuccess, router]);
 
+  // React clears a form after its action runs, which also throws away a picked option or a ticked box when the
+  // server sends back an error. Running the action from the submit handler instead keeps what the person entered,
+  // and React still shows the pending state. Without JavaScript the form posts through `action` as usual.
+  const submit = (e: SubmitEvt) => {
+    onSubmit?.(e);
+    if (e.defaultPrevented) return;
+    e.preventDefault();
+    const form = e.currentTarget;
+    // The clicked button's name and value go along, like a normal submit (for forms with two choices).
+    const by = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | HTMLInputElement | null;
+    const formData = new FormData(form, by && by.form === form ? by : null);
+    startTransition(() => formAction(formData));
+  };
+
   return (
     <FormContext.Provider value={{ state, pending }}>
-      <form ref={formRef} action={formAction} noValidate {...rest}>
+      <form ref={formRef} action={formAction} onSubmit={submit} noValidate {...rest}>
         {children}
       </form>
     </FormContext.Provider>

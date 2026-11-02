@@ -58,6 +58,8 @@ export async function signUp(_: ActionState, formData: FormData): Promise<Action
       accountType: data.accountType,
       ageConfirmedAt: now,
       termsAcceptedAt: now,
+      // Signing up signs you in.
+      lastLoginAt: now,
       creator: data.accountType === "CREATOR" ? { create: { status: "DRAFT" } } : undefined,
     },
   });
@@ -206,6 +208,7 @@ export async function resetPassword(_: ActionState, formData: FormData): Promise
   await audit(user.id, "user.password.reset", { type: "user", id: user.id });
   await createSession(user.id, { twoFactorPending: Boolean(user.twoFactorEnabledAt) });
   if (user.twoFactorEnabledAt) redirect("/login/2fa?next=/");
+  await afterSignIn(user.id, user.email, Boolean(user.emailVerifiedAt));
   await flash("Password updated. You're signed in.");
   redirect("/");
 }

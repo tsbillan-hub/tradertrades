@@ -11,6 +11,7 @@ import { rateLimit } from "@/server/rate-limit";
 import { audit } from "@/server/audit";
 import { productPath } from "@/lib/paths";
 import { refreshRating } from "@/server/commerce/ratings";
+import { flash } from "@/server/flash";
 
 const reviewSchema = z.object({
   productId: z.string().min(1),
@@ -71,6 +72,11 @@ export async function deleteMyReview(formData: FormData) {
   const id = String(formData.get("reviewId") ?? "");
   const review = await db.productReview.findUnique({ where: { id } });
   if (!review || review.userId !== user.id) return;
+  // A review our team removed stays on record, so it can't be deleted and posted again.
+  if (review.status === "REMOVED") {
+    await flash("Our team removed this review, so it can't be changed. Contact support if you think that's a mistake.", "error");
+    return;
+  }
   await db.productReview.delete({ where: { id } });
   await refreshRating(review.productId);
   refresh();

@@ -27,7 +27,7 @@ export function ReportButton({ targetType, targetId, label = "Report", className
 /** The report form on its own, for menus that open their own modal. */
 export function ReportForm({ targetType, targetId, onDone }: { targetType: string; targetId: string; onDone: () => void }) {
   return (
-    <ActionForm action={submitReport} toastOnSuccess onSuccess={onDone} className="space-y-4">
+    <ActionForm action={submitReport} toastOnSuccess resetOnSuccess onSuccess={onDone} className="space-y-4">
       <input type="hidden" name="targetType" value={targetType} />
       <input type="hidden" name="targetId" value={targetId} />
       <Field label="What's wrong?" name="reason">

@@ -115,6 +115,7 @@ export default async function SuggestPage({ searchParams }: { searchParams: Prom
                   <div className="text-xs text-muted">
                     {categoryInfo(s.category).singular} · {timeAgo(s.createdAt)}
                   </div>
+                  {s.status === "REJECTED" && s.reviewNote ? <div className="mt-1 text-xs text-ink-2">Why: {s.reviewNote}</div> : null}
                 </div>
                 <span className={STATUS[s.status].className}>{STATUS[s.status].label}</span>
               </li>

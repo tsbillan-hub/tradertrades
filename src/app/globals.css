@@ -153,6 +153,11 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+  /* Anything that scrolls sideways holds its own absolutely placed bits (like screen reader labels in a table),
+     so they can't stretch the page on a phone. Utilities like lg:sticky still win over this. */
+  .overflow-x-auto {
+    position: relative;
+  }
   h1,
   h2,
   h3,

@@ -12,6 +12,8 @@ import { audit } from "@/server/audit";
 import { removeMedia } from "@/server/storage";
 import { refreshCompanyRating } from "@/server/queries/directory";
 import { CATEGORIES, REVIEW_USED_FOR } from "@/lib/constants";
+import { notifyAdmins } from "@/server/admin";
+import { flash } from "@/server/flash";
 
 const reviewSchema = z.object({
   companyId: z.string().min(1),
@@ -82,6 +84,9 @@ export async function saveCompanyReview(_: ActionState, formData: FormData): Pro
       });
     }
   }
+  if (proofStatus === "PENDING" && proofMediaId !== existing?.proofMediaId) {
+    await notifyAdmins({ type: "admin.proof", title: `Proof to check: review of ${company.name}`, url: "/admin/proof" });
+  }
   await audit(user.id, existing ? "company_review.update" : "company_review.create", { type: "company_review", id: review.id }, { rating: d.rating });
   refresh();
   return success(existing ? "Review updated." : "Thanks, your review is up.");
@@ -91,6 +96,11 @@ export async function deleteCompanyReview(formData: FormData) {
   const user = await requireUser();
   const review = await db.companyReview.findUnique({ where: { id: String(formData.get("reviewId") ?? "") } });
   if (!review || review.userId !== user.id) return;
+  // A review our team removed stays on record, so it can't be deleted and posted again.
+  if (review.status === "REMOVED") {
+    await flash("Our team removed this review, so it can't be changed. Contact support if you think that's a mistake.", "error");
+    return;
+  }
   await db.companyReview.delete({ where: { id: review.id } });
   if (review.proofMediaId) await removeMedia(review.proofMediaId);
   await refreshCompanyRating(review.companyId);
@@ -192,6 +202,7 @@ export async function suggestCompany(_: ActionState, formData: FormData): Promis
       worksThere: d.worksThere === "on",
     },
   });
+  await notifyAdmins({ type: "admin.suggestion", title: `Directory suggestion: ${d.name}`, url: "/admin/suggestions" });
   refresh();
   return success(
     d.worksThere === "on"

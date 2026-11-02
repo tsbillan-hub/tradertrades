@@ -1,11 +1,11 @@
 import "server-only";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
 import { formatDate, money, orderNumber } from "@/lib/utils";
 import { notify } from "@/server/notify";
 import { audit } from "@/server/audit";
 import { paymentIntentFor, refundPayment, stripe } from "@/server/stripe";
 import { cancelFutureBookings } from "@/server/bookings";
+import { notifyAdmins } from "@/server/admin";
 
 /** Creators have this long to answer a refund request before our team decides. */
 export const REFUND_ANSWER_DAYS = 3;
@@ -220,14 +220,11 @@ export async function escalateRefund(refundId: string, by: "buyer" | "timeout") 
   const refund = await db.refund.findUnique({ where: { id: refundId } });
   if (!refund || refund.escalatedAt || refund.status === "PROCESSED" || refund.status === "APPROVED") return null;
   const updated = await db.refund.update({ where: { id: refund.id }, data: { escalatedAt: new Date(), status: "REQUESTED" } });
-  const admins = await db.user.findMany({ where: { OR: [{ isAdmin: true }, { email: { in: env.adminEmails } }] }, select: { id: true } });
-  for (const a of admins) {
-    await notify(a.id, {
-      type: "admin.refund",
-      title: by === "buyer" ? "A buyer asked us to review a refund" : "A refund request wasn't answered in time",
-      url: "/admin/refunds",
-    });
-  }
+  await notifyAdmins({
+    type: "admin.refund",
+    title: by === "buyer" ? "A buyer asked us to review a refund" : "A refund request wasn't answered in time",
+    url: "/admin/refunds",
+  });
   await audit(null, "refund.escalate", { type: "refund", id: refund.id }, { by });
   return updated;
 }

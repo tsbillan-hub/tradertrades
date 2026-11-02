@@ -107,7 +107,11 @@ export default async function VideoPage({ params }: Props) {
 function VideoMeta({ v, isOwner, byHref, byName }: { v: NonNullable<Awaited<ReturnType<typeof load>>>; isOwner: boolean; byHref: string; byName: string }) {
   return (
     <div className="mt-5">
-      {v.status !== "PUBLISHED" ? <div className="badge badge-warn mb-3">Hidden. Only you can see this.</div> : null}
+      {v.status === "REMOVED" ? (
+        <div className="badge badge-bad mb-3">Taken down by our team. Only you can see this.</div>
+      ) : v.status !== "PUBLISHED" ? (
+        <div className="badge badge-warn mb-3">Hidden. Only you can see this.</div>
+      ) : null}
       <div className="flex flex-wrap items-start gap-2">
         <h1 className="min-w-0 flex-1 text-[24px] sm:text-[28px]">{v.title}</h1>
         {v.isSample ? <SampleBadge /> : null}

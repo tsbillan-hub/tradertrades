@@ -365,6 +365,8 @@ enum MediaVisibility {
 enum VideoStatus {
   PUBLISHED
   HIDDEN
+  /// Taken down by our team. The creator can't show it again.
+  REMOVED
 }
 
 enum CampaignStatus {
@@ -710,6 +712,7 @@ model CompanySuggestion {
   companyId  String?
   company    Company?         @relation(fields: [companyId], references: [id], onDelete: SetNull)
   reviewedAt DateTime?
+  reviewNote String?
   createdAt  DateTime         @default(now())
 
   @@index([status, createdAt])
@@ -845,6 +848,8 @@ model Product {
   reviewNote     String?
   submittedAt    DateTime?
   publishedAt    DateTime?
+  /// When our team looked at the listing after it went live (anyone can sell right away).
+  checkedAt      DateTime?
   markets        Market[]
   level          SkillLevel    @default(ALL)
   tags           String[]

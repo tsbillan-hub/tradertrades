@@ -7,6 +7,8 @@ import { fail, formObject, invalid, optionalText, success, type ActionState } fr
 import { humanCode } from "@/server/crypto";
 import { requireVerifiedUser } from "@/server/dal";
 import { audit } from "@/server/audit";
+import { notifyAdmins } from "@/server/admin";
+import { flash } from "@/server/flash";
 
 async function ownedMedia(userId: string, ids: string[]) {
   if (!ids.length) return [];
@@ -32,8 +34,12 @@ export async function requestIdentityCheck(_: ActionState, formData: FormData): 
     data: { userId: user.id, kind: "IDENTITY", mediaIds: media, note: parsed.data.note, data: { legalName: parsed.data.legalName } },
   });
   await audit(user.id, "verification.request", { type: "verification", id: req.id }, { kind: "IDENTITY" });
+  await notifyAdmins({ type: "admin.verification", title: `ID check to review: ${user.displayName}`, url: "/admin/verification" });
+  // The form gives way to the "waiting" note, so the confirmation is a toast.
+  const message = "Sent. A person checks IDs, usually within 2 working days. Your ID photos are deleted once we decide.";
+  await flash(message);
   refresh();
-  return success("Sent. A person checks IDs, usually within 2 working days. Your ID photos are deleted once we decide.");
+  return success(message);
 }
 
 /** Gives the person a code to put in their social bios. */
@@ -55,6 +61,7 @@ export async function submitSocialsCheck(): Promise<ActionState> {
   if (!req) return fail("Make a code first.");
   const data = (req.data as Record<string, unknown> | null) ?? {};
   await db.verificationRequest.update({ where: { id: req.id }, data: { status: "PENDING", data: { ...data, ready: true, submittedAt: new Date().toISOString() } } });
+  await notifyAdmins({ type: "admin.verification", title: `Socials check to review: ${user.displayName}`, url: "/admin/verification" });
   refresh();
   return success("Thanks. We'll check your bios for the code, usually within 2 working days. Leave it there until then.");
 }

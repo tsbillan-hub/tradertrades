@@ -20,6 +20,9 @@ export async function canMessage(fromId: string, toId: string): Promise<string |
   if (fromId === toId) return "You can't message yourself.";
   const to = await db.user.findUnique({ where: { id: toId }, select: { status: true, dmPolicy: true } });
   if (!to || to.status === "DELETED" || to.status === "BANNED") return "This account isn't available.";
+  // Our team can reach anyone, for support and refund reviews.
+  const from = await db.user.findUnique({ where: { id: fromId }, select: { isAdmin: true } });
+  if (from?.isAdmin) return null;
   if (await isBlocked(fromId, toId)) return "You can't message this person.";
   if (to.dmPolicy === "EVERYONE") return null;
   const dealt = await haveDealtWith(fromId, toId);
