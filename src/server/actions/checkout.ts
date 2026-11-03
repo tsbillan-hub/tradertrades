@@ -129,8 +129,12 @@ export async function joinWaitlist(_: ActionState, formData: FormData): Promise<
   const rl = await rateLimit(`waitlist:${viewer?.id ?? ip ?? "anon"}`, 10, 3600);
   if (!rl.ok) return fail("Too many tries. Try again later.");
 
-  const product = await db.product.findUnique({ where: { id: parsed.data.productId }, select: { id: true, status: true, creatorId: true, title: true } });
+  const product = await db.product.findUnique({
+    where: { id: parsed.data.productId },
+    select: { id: true, status: true, creatorId: true, title: true, isSample: true },
+  });
   if (!product || product.status !== "PUBLISHED") return fail("This product isn't available.");
+  if (product.isSample) return fail("This is an example listing, so it has no waitlist.");
   if (viewer?.id === product.creatorId) return fail("This is your own product.");
 
   await db.waitlistEntry.upsert({

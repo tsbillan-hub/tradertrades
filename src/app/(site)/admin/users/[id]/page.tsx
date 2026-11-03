@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink, Trash2, X } from "lucide-react";
 import { db } from "@/lib/db";
 import { REPORT_REASONS } from "@/lib/constants";
 import { productPath } from "@/lib/paths";
 import { PRODUCT_STATUS_BADGE } from "@/lib/product-status";
 import { formatDate, money, orderNumber, timeAgo, plural } from "@/lib/utils";
-import { revokeBadge } from "@/server/actions/admin";
+import { removeSampleAccount, revokeBadge } from "@/server/actions/admin";
 import { Avatar } from "@/components/ui/avatar";
 import { ActionButton } from "@/components/ui/form";
 import { KeyValue, Notice, PageHeader } from "@/components/ui/misc";
@@ -68,7 +68,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
                 Public page <ExternalLink />
               </Link>
             ) : null}
-            {user.status === "ACTIVE" || user.status === "SUSPENDED" ? <MessageButton toId={user.id} toName={user.displayName} subject="From the TraderTrades team" /> : null}
+            {(user.status === "ACTIVE" || user.status === "SUSPENDED") && !user.isSample ? <MessageButton toId={user.id} toName={user.displayName} subject="From the TraderTrades team" /> : null}
           </>
         }
       />
@@ -81,6 +81,25 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
       </div>
 
       {user.status !== "ACTIVE" && user.statusReason ? <Notice tone={user.status === "BANNED" ? "bad" : "warn"} title="Reason they see">{user.statusReason}</Notice> : null}
+
+      {user.isSample ? (
+        <Notice
+          tone="warn"
+          title="Sample account"
+          action={
+            <ActionButton
+              action={removeSampleAccount}
+              fields={{ userId: user.id }}
+              variant="danger"
+              confirm={`Remove @${user.username} and everything on it? Its listings and videos are deleted, and the username becomes free. It won't come back on the next deploy.`}
+            >
+              <Trash2 /> Remove sample account
+            </ActionButton>
+          }
+        >
+          An example made for the preview. Nobody can sign in to it, and its listings can&apos;t be bought. Remove it when you no longer want it, for example to take the username yourself.
+        </Notice>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Panel title="Account">

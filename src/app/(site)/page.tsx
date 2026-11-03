@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/market/product-card";
 import { CategoryIcon } from "@/components/category-icon";
 import { ProductTypeIcon } from "@/components/market/product-type-icon";
 import { Avatar } from "@/components/ui/avatar";
+import { SampleBadge } from "@/components/ui/misc";
 import { TrustBadges } from "@/components/market/badges";
 import { popularProducts, publicProductWhere, productCardInclude } from "@/server/queries/products";
 import { feeExample } from "@/lib/fees";
@@ -17,9 +18,9 @@ import type { CompanyCategory } from "@/generated/prisma/enums";
 
 export default async function HomePage() {
   const [productCount, companyCount, creatorCount, popular, counts, featuredCreator, sponsored] = await Promise.all([
-    db.product.count({ where: publicProductWhere }),
+    db.product.count({ where: { ...publicProductWhere, isSample: false } }),
     db.company.count({ where: { status: "PUBLISHED" } }),
-    db.creatorProfile.count({ where: { status: "APPROVED" } }),
+    db.creatorProfile.count({ where: { status: "APPROVED", user: { status: "ACTIVE", isSample: false } } }),
     popularProducts(8),
     categoryCounts(),
     db.user.findFirst({
@@ -99,7 +100,10 @@ export default async function HomePage() {
               <div className="mt-5 flex items-center gap-4">
                 <Avatar src={featuredCreator.avatarUrl} name={featuredCreator.displayName} size={64} />
                 <div>
-                  <div className="font-display text-2xl font-extrabold tracking-tight">{featuredCreator.displayName}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-2xl font-extrabold tracking-tight">{featuredCreator.displayName}</span>
+                    {featuredCreator.isSample ? <SampleBadge /> : null}
+                  </div>
                   <div className="text-sm text-[#F2EADB]/70">@{featuredCreator.username}</div>
                 </div>
               </div>

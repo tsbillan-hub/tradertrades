@@ -10,7 +10,7 @@ import { followUser } from "@/server/actions/profile";
 import { Avatar } from "@/components/ui/avatar";
 import { ActionButton } from "@/components/ui/form";
 import { CopyButton } from "@/components/ui/client";
-import { EmptyState, LinkTabs, RatingSummary, SampleBadge, Stars } from "@/components/ui/misc";
+import { EmptyState, LinkTabs, Notice, RatingSummary, SampleBadge, Stars } from "@/components/ui/misc";
 import { Markdown } from "@/components/ui/markdown";
 import { TrustBadges, VerifiedTick } from "@/components/market/badges";
 import { ProductCard } from "@/components/market/product-card";
@@ -133,7 +133,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
                   {following ? <UserCheck /> : <UserPlus />}
                   {following ? "Following" : "Follow"}
                 </ActionButton>
-                <MessageButton toId={user.id} toName={user.displayName} />
+                {user.isSample ? null : <MessageButton toId={user.id} toName={user.displayName} />}
               </>
             ) : (
               <Link href={`/login?next=/@${user.username}`} className="btn btn-primary">
@@ -167,6 +167,11 @@ export default async function ProfilePage({ params, searchParams }: Props) {
             </div>
             {user.creator?.headline || user.bio ? <p className="mt-4 max-w-2xl text-[16px] text-ink-2">{user.creator?.headline ?? user.bio}</p> : null}
             <TrustBadges who={user} className="mt-4" />
+            {user.isSample ? (
+              <Notice tone="plain" className="mt-4 max-w-2xl" title="Example page">
+                This shows what a creator page looks like on TraderTrades. Its listings are examples and can&apos;t be bought.
+              </Notice>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-start gap-2 lg:justify-end">
             {user.socialLinks.map((s) => (
@@ -205,7 +210,10 @@ export default async function ProfilePage({ params, searchParams }: Props) {
                         )}
                       </div>
                       <div className="flex flex-col p-5">
-                        {community.launchState === "WAITLIST" ? <span className="badge badge-accent self-start">Opening soon</span> : <span className="badge self-start">Membership</span>}
+                        <div className="flex items-center gap-2">
+                          {community.launchState === "WAITLIST" ? <span className="badge badge-accent">Opening soon</span> : <span className="badge">Membership</span>}
+                          {community.isSample ? <SampleBadge /> : null}
+                        </div>
                         <div className="mt-3 font-display text-2xl leading-tight font-extrabold tracking-tight">{community.title}</div>
                         {community.subtitle ? <p className="mt-2 text-sm text-muted">{community.subtitle}</p> : null}
                         <div className="mt-auto flex items-center justify-between pt-5">

@@ -402,6 +402,41 @@ const companySchema = z.object({
   checked: z.literal("on").optional(),
 });
 
+/**
+ * Deletes an example account (like @tris) with everything on it, which frees its username.
+ * Only sample accounts with no orders can be removed this way. The example isn't added back on the next deploy.
+ */
+export async function removeSampleAccount(formData: FormData) {
+  const admin = await requireAdmin();
+  const userId = id.safeParse(formData.get("userId"));
+  if (!userId.success) return;
+  const user = await db.user.findUnique({
+    where: { id: userId.data },
+    select: {
+      id: true,
+      username: true,
+      isSample: true,
+      _count: { select: { ordersBought: true, ordersSold: true, subscriptions: true, subscribers: true, campaignsCreated: true } },
+    },
+  });
+  if (!user?.isSample) {
+    await flash("Only sample accounts can be removed here.", "error");
+    refresh();
+    return;
+  }
+  if (Object.values(user._count).some((n) => n > 0)) {
+    await flash("This sample account has orders or campaigns, so it can't be removed. Put it on hold instead.", "error");
+    refresh();
+    return;
+  }
+  const media = await db.media.findMany({ where: { ownerId: user.id }, select: { id: true } });
+  for (const m of media) await removeMedia(m.id);
+  await db.user.delete({ where: { id: user.id } });
+  await audit(admin.id, "sample.removed", { type: "user", id: user.id }, { username: user.username });
+  await flash(`Removed the sample account @${user.username}. The username is free now.`);
+  redirect("/admin/users");
+}
+
 /** Create or edit a directory company. "Details checked" stamps today's date on the listing. */
 export async function saveCompany(_: ActionState, formData: FormData): Promise<ActionState> {
   const admin = await requireAdmin();

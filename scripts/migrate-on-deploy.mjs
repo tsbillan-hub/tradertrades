@@ -21,3 +21,13 @@ if (process.env.DATABASE_URL) {
   console.log("[migrate] Refreshing directory listings...");
   execSync("npx tsx scripts/seed-directory.ts", { stdio: "inherit" });
 }
+
+// The example creator page, @tris. Never stops a deploy: it's a nice-to-have, not part of the app.
+if (process.env.DATABASE_URL && process.env.SEED_EXAMPLE !== "0") {
+  console.log("[migrate] Adding the example creator page...");
+  try {
+    execSync("npx tsx --conditions=react-server scripts/seed-example.ts", { stdio: "inherit" });
+  } catch {
+    console.warn("[migrate] The example page wasn't added this time. The deploy carries on.");
+  }
+}

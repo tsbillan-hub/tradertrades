@@ -18,8 +18,9 @@ export async function haveDealtWith(a: string, b: string) {
 /** Can `from` start a conversation with `to`? Returns a reason when not. */
 export async function canMessage(fromId: string, toId: string): Promise<string | null> {
   if (fromId === toId) return "You can't message yourself.";
-  const to = await db.user.findUnique({ where: { id: toId }, select: { status: true, dmPolicy: true } });
+  const to = await db.user.findUnique({ where: { id: toId }, select: { status: true, dmPolicy: true, isSample: true } });
   if (!to || to.status === "DELETED" || to.status === "BANNED") return "This account isn't available.";
+  if (to.isSample) return "This is an example account, so nobody reads its messages.";
   // Our team can reach anyone, for support and refund reviews.
   const from = await db.user.findUnique({ where: { id: fromId }, select: { isAdmin: true } });
   if (from?.isAdmin) return null;

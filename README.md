@@ -32,9 +32,15 @@ With no email service connected, emails are saved instead of sent. In preview mo
    - `ADMIN_EMAILS`: your email address. Accounts with this email get the admin panel.
    - `DEMO_MODE`: `1` while you're testing (test checkout without Stripe, email links shown on screen). Remove it before real launch.
    - `CRON_SECRET`: any long random text. Vercel sends it to the daily upkeep job (renewals, refund deadlines, payout holds, clean-up), which runs at 07:00 UTC from `vercel.json`.
-5. Deploy (or **Redeploy**). Database migrations run automatically during the build.
+5. Deploy (or **Redeploy**). Database migrations run automatically during the build, and so do two starting sets of content: the directory listings (`scripts/seed-directory.ts`) and the example creator page, @tris (`scripts/seed-example.ts`).
 
 Optional services, each switched on by adding its keys: Resend (`RESEND_API_KEY`, `EMAIL_FROM`) for real emails, Stripe (see below) for real payments, Daily (`DAILY_API_KEY`) for video calls, and Anthropic (`ANTHROPIC_API_KEY`) for extra content checks.
+
+## The example creator page (@tris)
+
+The first deploy adds @tris: a sample account with the A+ setup video and three example listings (a community, a course and chart review calls). Its pages say it's an example, its listings show a Sample label and can't be bought, and nobody can sign in to it. Search engines aren't told about it.
+
+To take the username for a real account: sign in with an email listed in `ADMIN_EMAILS`, open **Admin → Accounts → @tris** (Admin is in the menu under your profile picture) and choose **Remove sample account**. That deletes it with its listings and files, and frees the username for anyone to sign up with, or to pick in **Settings → Account**. Once removed it isn't added back. To skip it on a new site, set `SEED_EXAMPLE=0` before the first deploy.
 
 ## Switch on real payments (Stripe)
 
@@ -63,3 +69,5 @@ Fees live in `src/lib/fees.ts`: 0% on buyers who come through the seller's own l
 | `npm run typecheck` | TypeScript check |
 | `npm run lint` | ESLint |
 | `npm run db:migrate` | Create and apply a migration locally |
+| `npm run db:seed-directory` | Add or refresh the starting directory listings (claimed listings are left alone) |
+| `npm run db:seed-example` | Add the example creator page, @tris, unless it exists or was removed |

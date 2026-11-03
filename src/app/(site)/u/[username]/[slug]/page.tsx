@@ -438,6 +438,8 @@ export default async function ProductPage({ params }: Props) {
                 {product.type === "MENTORING" ? <PriceForm compact label="Buy more calls" /> : null}
               </div>
             </div>
+          ) : product.isSample ? (
+            <SampleBox />
           ) : product.launchState === "WAITLIST" ? (
             <div>
               <div className="badge badge-ink">Opening soon</div>
@@ -486,7 +488,7 @@ export default async function ProductPage({ params }: Props) {
           {creator.creator?.headline ? <p className="mt-3 text-sm text-ink-2">{creator.creator.headline}</p> : null}
           <TrustBadges who={creator} size="sm" className="mt-3" />
           <div className="mt-3 text-xs text-muted">{plural(creator._count.followers, "follower")}</div>
-          {!isOwner ? (
+          {!isOwner && !creator.isSample ? (
             <div className="mt-4 flex flex-wrap gap-2">
               {viewer ? (
                 <MessageButton toId={creator.id} toName={creator.displayName} subject={`Question about ${product.title}`} />
@@ -523,6 +525,34 @@ export default async function ProductPage({ params }: Props) {
             </div>
           ) : null}
         </div>
+      </div>
+    );
+  }
+
+  /** Example listings show their prices but can't be bought. */
+  function SampleBox() {
+    return (
+      <div>
+        <ul className="space-y-2.5">
+          {product.prices.map((p) => (
+            <li key={p.id} className="flex items-baseline justify-between gap-3">
+              <span className="min-w-0 text-sm">
+                <span className="block font-semibold">{p.label}</span>
+                <span className="block text-xs text-muted">
+                  {p.interval !== "ONE_TIME" ? INTERVAL_LABEL[p.interval] : "One payment"}
+                  {p.sessions ? ` · ${plural(p.sessions, "call")}` : ""}
+                </span>
+              </span>
+              <span className="num shrink-0 text-[15px] font-semibold">{p.amountCents === 0 ? "Free" : money(p.amountCents)}</span>
+            </li>
+          ))}
+        </ul>
+        <button type="button" disabled className="btn btn-primary btn-lg mt-4 w-full">
+          {BUY_LABEL[product.type]}
+        </button>
+        <Notice tone="plain" className="mt-4" title="Example listing">
+          This shows how a listing looks on TraderTrades. It can&apos;t be bought.
+        </Notice>
       </div>
     );
   }

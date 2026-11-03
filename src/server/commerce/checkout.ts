@@ -50,6 +50,7 @@ export async function quoteCheckout(
   if (buyer.status !== "ACTIVE") return { ok: false, error: "Your account can't make purchases right now. Contact support.", product };
   if (product.creatorId === buyer.id) return { ok: false, error: "This is your own product. You already have full access.", product };
   if (product.launchState === "WAITLIST") return { ok: false, error: "This isn't open yet. Join the waitlist to hear the moment it opens.", product };
+  if (product.isSample) return { ok: false, error: "This is an example listing, so it can't be bought.", product };
 
   const blocked = await db.block.findFirst({ where: { blockerId: product.creatorId, blockedId: buyer.id } });
   if (blocked) return { ok: false, error: "You can't buy from this seller.", product };

@@ -58,6 +58,12 @@ function Underline() {
 const QUICK = ["Prop firms", "NQ scalping", "Order flow", "Mentoring", "Trading journals", "Psychology"];
 
 export function Hero({ productCount, companyCount, creatorCount }: { productCount: number; companyCount: number; creatorCount: number }) {
+  // Real numbers only (example content isn't counted), and a number shows once there's something to count.
+  const stats = [
+    { label: "Listings", value: productCount },
+    { label: "Companies", value: companyCount },
+    { label: "Creators", value: creatorCount },
+  ].filter((x) => x.value > 0);
   const [role, setRole] = useState<Role>("traders");
   const [q, setQ] = useState("");
   const router = useRouter();
@@ -131,20 +137,16 @@ export function Hero({ productCount, companyCount, creatorCount }: { productCoun
           </div>
         )}
 
-        <dl className="mt-12 grid max-w-2xl grid-cols-3 gap-6 border-t border-line pt-6">
-          <div>
-            <dt className="text-xs font-semibold tracking-wide text-muted uppercase">Listings</dt>
-            <dd className="num mt-1 text-2xl font-semibold">{productCount.toLocaleString()}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold tracking-wide text-muted uppercase">Companies</dt>
-            <dd className="num mt-1 text-2xl font-semibold">{companyCount.toLocaleString()}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold tracking-wide text-muted uppercase">Creators</dt>
-            <dd className="num mt-1 text-2xl font-semibold">{creatorCount.toLocaleString()}</dd>
-          </div>
-        </dl>
+        {stats.length ? (
+          <dl className="mt-12 grid max-w-2xl grid-cols-3 gap-6 border-t border-line pt-6">
+            {stats.map((s) => (
+              <div key={s.label}>
+                <dt className="text-xs font-semibold tracking-wide text-muted uppercase">{s.label}</dt>
+                <dd className="num mt-1 text-2xl font-semibold">{s.value.toLocaleString()}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
       </div>
     </section>
   );

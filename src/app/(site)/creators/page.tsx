@@ -50,7 +50,7 @@ export default async function CreatorsPage({ searchParams }: { searchParams: Pro
         _count: { select: { followers: true, products: { where: { status: "PUBLISHED" } } } },
         products: { where: { status: "PUBLISHED" }, select: { ratingAvg: true, ratingCount: true, salesCount: true, type: true } },
       },
-      orderBy: sort === "new" ? [{ creator: { approvedAt: "desc" } }] : [{ followers: { _count: "desc" } }, { createdAt: "asc" }],
+      orderBy: [{ isSample: "asc" }, ...(sort === "new" ? [{ creator: { approvedAt: "desc" as const } }] : [{ followers: { _count: "desc" as const } }, { createdAt: "asc" as const }])],
       skip: (page - 1) * PER_PAGE,
       take: PER_PAGE,
     }),

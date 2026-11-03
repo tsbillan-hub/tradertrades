@@ -22,11 +22,11 @@ const PRICE_FILTERS: Record<string, { label: string; where: Prisma.IntFilter }> 
 };
 
 const SORTS: Record<string, { label: string; orderBy: Prisma.ProductOrderByWithRelationInput[] }> = {
-  popular: { label: "Most popular", orderBy: [{ salesCount: "desc" }, { ratingCount: "desc" }, { publishedAt: "desc" }] },
-  new: { label: "Newest", orderBy: [{ publishedAt: "desc" }] },
-  rating: { label: "Top rated", orderBy: [{ ratingAvg: "desc" }, { ratingCount: "desc" }] },
-  "price-asc": { label: "Price: low to high", orderBy: [{ priceFromCents: "asc" }, { salesCount: "desc" }] },
-  "price-desc": { label: "Price: high to low", orderBy: [{ priceFromCents: "desc" }, { salesCount: "desc" }] },
+  popular: { label: "Most popular", orderBy: [{ isSample: "asc" }, { salesCount: "desc" }, { ratingCount: "desc" }, { publishedAt: "desc" }] },
+  new: { label: "Newest", orderBy: [{ isSample: "asc" }, { publishedAt: "desc" }] },
+  rating: { label: "Top rated", orderBy: [{ isSample: "asc" }, { ratingAvg: "desc" }, { ratingCount: "desc" }] },
+  "price-asc": { label: "Price: low to high", orderBy: [{ isSample: "asc" }, { priceFromCents: "asc" }, { salesCount: "desc" }] },
+  "price-desc": { label: "Price: high to low", orderBy: [{ isSample: "asc" }, { priceFromCents: "desc" }, { salesCount: "desc" }] },
 };
 
 type SP = { q?: string; type?: string; market?: string; level?: string; price?: string; sort?: string; page?: string };

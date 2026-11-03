@@ -31,7 +31,7 @@ export async function popularProducts(limit = 8) {
   return db.product.findMany({
     where: publicProductWhere,
     include: productCardInclude,
-    orderBy: [{ salesCount: "desc" }, { ratingCount: "desc" }, { publishedAt: "desc" }],
+    orderBy: [{ isSample: "asc" }, { salesCount: "desc" }, { ratingCount: "desc" }, { publishedAt: "desc" }],
     take: limit,
   });
 }

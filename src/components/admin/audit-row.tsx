@@ -73,6 +73,7 @@ const LABELS: Record<string, string> = {
   "payouts.resume": "Restarted a creator's payouts",
   "payouts.adjust": "Changed a creator's balance",
   "payouts.run": "Ran the weekly payouts",
+  "sample.removed": "Removed a sample account",
   "broadcast.sent": "Emailed their customers",
   "featured.start": "Started booking a Sponsored spot",
   "featured.booked": "Booked a Sponsored spot",
