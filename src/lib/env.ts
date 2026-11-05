@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 
 function clean(v: string | undefined) {
   const t = v?.trim();
@@ -14,8 +15,17 @@ export const env = {
         ? `https://${process.env.VERCEL_URL}`
         : "http://localhost:3000")
   ).replace(/\/$/, ""),
-  /** Empty in production when not set, so nothing silently runs on a known dev secret. */
-  appSecret: clean(process.env.APP_SECRET) ?? (process.env.NODE_ENV === "production" ? "" : "dev-only-secret-change-me"),
+  /**
+   * APP_SECRET when set. Otherwise, in production, a secret made from the database address (which holds the
+   * database password), so a one-click deploy works with nothing typed in. Set APP_SECRET before real launch.
+   */
+  appSecret:
+    clean(process.env.APP_SECRET) ??
+    (process.env.NODE_ENV !== "production"
+      ? "dev-only-secret-change-me"
+      : process.env.DATABASE_URL
+        ? createHash("sha256").update(`tradertrades-app-secret:${process.env.DATABASE_URL}`).digest("hex")
+        : ""),
   adminEmails: (clean(process.env.ADMIN_EMAILS) ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
@@ -29,8 +39,13 @@ export const env = {
   anthropicKey: clean(process.env.ANTHROPIC_API_KEY),
   supportEmail: clean(process.env.SUPPORT_EMAIL) ?? "support@tradertrades.com",
   isProd: process.env.NODE_ENV === "production",
-  /** Preview helpers: test checkout without Stripe and email links shown on screen. On by default outside production. */
-  demoMode: clean(process.env.DEMO_MODE) ? process.env.DEMO_MODE === "1" : process.env.NODE_ENV !== "production",
+  /**
+   * Preview helpers: test checkout without Stripe and email links shown on screen. When DEMO_MODE isn't set it's on
+   * outside production, and in production until Stripe is connected (no real payments are possible before that).
+   */
+  demoMode: clean(process.env.DEMO_MODE)
+    ? process.env.DEMO_MODE === "1"
+    : process.env.NODE_ENV !== "production" || !clean(process.env.STRIPE_SECRET_KEY),
 };
 
 export const features = {

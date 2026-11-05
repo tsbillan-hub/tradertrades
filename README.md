@@ -22,6 +22,12 @@ With no email service connected, emails are saved instead of sent. In preview mo
 
 ## Put it online (Vercel)
 
+**One click:** [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ftsbillan-hub%2Ftradertrades&project-name=tradertrades-site&repository-name=tradertrades-site&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%2C%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22public%22%7D%5D)
+
+The button makes the project, a Neon database and a Blob store in one go. Nothing has to be typed in: without
+`APP_SECRET` the site makes one from the database address, and without Stripe it runs in preview mode (test checkout,
+emails shown on screen). Set your own `APP_SECRET` and `ADMIN_EMAILS` before real launch.
+
 1. Push this code to a GitHub repository.
 2. Sign in at [vercel.com](https://vercel.com) with GitHub and choose **Add New → Project**, then import the repository. Keep the default settings.
 3. Before the first deploy (or right after it), open the project's **Storage** tab:
